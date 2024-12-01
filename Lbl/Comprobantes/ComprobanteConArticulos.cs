@@ -983,10 +983,11 @@ namespace Lbl.Comprobantes
         public override Lfx.Types.OperationResult Guardar()
         {
             this.Articulos.ElementoPadre = this;
+                        Lbl.Entidades.Pais PaisActual = new Lbl.Entidades.Pais(this.Connection, Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<int>("Sistema.Pais", 1));
 
             qGen.IStatement Comando;
             if (this.Total <= 0)
-                return new Lfx.Types.FailureOperationResult("El comprobante debe tener un importe superior a $ 0.00.");
+                                return new Lfx.Types.FailureOperationResult("El comprobante debe tener un importe superior a " + PaisActual.Moneda.Simbolo + " 0.00.");
 
             if (this.Existe == false)
             {
@@ -1213,7 +1214,7 @@ namespace Lbl.Comprobantes
                         Comando.ColumnValues.AddWithValue("iva", Art.ImporteIvaUnitario);
                         Comando.ColumnValues.AddWithValue("recargo", Art.Recargo);
                         if (Art.Costo == 0 && Art.Articulo != null)
-                            Comando.ColumnValues.AddWithValue("costo", Art.Articulo.Costo);
+                                                        Comando.ColumnValues.AddWithValue("costo", Art.Articulo.CostoLocal);
                         else
                             Comando.ColumnValues.AddWithValue("costo", Art.Costo);
                         Comando.ColumnValues.AddWithValue("importe", Art.ImporteAImprimir);

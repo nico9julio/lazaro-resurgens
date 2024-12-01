@@ -925,9 +925,9 @@ namespace Lcc.Entrada.Articulos
 
                                         decimal UnitarioMostrar;
                                         if (m_Precio == Precios.Costo) {
-                                                UnitarioMostrar = Articulo.Costo;
+                                                UnitarioMostrar = Articulo.CostoLocal;
                                         } else {
-                                                UnitarioMostrar = Articulo.Pvp;
+                                                UnitarioMostrar = Articulo.PvpLocal;
                                         }
 
                                         if (this.Cantidad == 0) {

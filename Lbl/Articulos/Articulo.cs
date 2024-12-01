@@ -18,6 +18,7 @@ namespace Lbl.Articulos
                 private Lbl.Cajas.Caja m_Caja = null;
                 private ColeccionItem m_ListaItem = null;
                 private Receta m_Receta = null;
+                private Entidades.Moneda m_Moneda = null;
                 public decimal ExistenciasInicial { get; set; }
 
 		//Heredar constructor
@@ -80,7 +81,8 @@ namespace Lbl.Articulos
                         }
                         set
                         {
-                                if (value == null) {
+                                if (value == null)
+                                {
                                         this.Registro["obs"] = null;
                                 } else {
                                         this.Registro["obs"] = value.Trim(new char[] { '\n', '\r', ' ' });
@@ -102,6 +104,10 @@ namespace Lbl.Articulos
 			}
 		}
 
+                /// <summary>
+                /// Obtiene o establece un texto que representa el segundo código de identificación interna del artículo.
+                /// </summary>
+                [Column(Name = "codigo2")]
 		public string Codigo2
 		{
 			get
@@ -114,6 +120,10 @@ namespace Lbl.Articulos
 			}
 		}
 
+                /// <summary>
+                /// Obtiene o establece un texto que representa el tercer código de identificación interna del artículo.
+                /// </summary>
+                [Column(Name = "codigo3")]
 		public string Codigo3
 		{
 			get
@@ -126,6 +136,10 @@ namespace Lbl.Articulos
 			}
 		}
 
+                /// <summary>
+                /// Obtiene o establece un texto que representa el cuarto código de identificación interna del artículo.
+                /// </summary>
+                [Column(Name = "codigo4")]
 		public string Codigo4
 		{
 			get
@@ -138,6 +152,10 @@ namespace Lbl.Articulos
 			}
 		}
 
+                /// <summary>
+                /// Obtiene o establece un texto que representa el modelo del artículo.
+                /// </summary>
+                [Column(Name = "modelo")]
 		public string Modelo
 		{
 			get
@@ -150,6 +168,10 @@ namespace Lbl.Articulos
 			}
 		}
 
+                /// <summary>
+                /// Obtiene o establece un texto que representa la serie del artículo.
+                /// </summary>
+                [Column(Name = "serie")]
 		public string Serie
 		{
 			get
@@ -162,6 +184,10 @@ namespace Lbl.Articulos
 			}
 		}
 
+                /// <summary>
+                /// Obtiene o establece un texto que representa la forma en la cual se contabiliza una unidad del artículo.
+                /// </summary>
+                [Column(Name = "unidad_stock")]
 		public string Unidad
 		{
 			get
@@ -198,6 +224,35 @@ namespace Lbl.Articulos
 			}
 		}
 
+                /// <summary>
+                /// Obtiene o establece un el objeto Moneda con el cual se calcula el costo del articulo.
+                /// </summary>
+                [Column(Name = "id_moneda")]
+                public Entidades.Moneda Moneda
+                {
+                        get
+                        {
+                                if (this.GetFieldValue<int>("id_moneda") != 0)
+                                {
+                                        m_Moneda = new Entidades.Moneda(this.Connection, this.GetFieldValue<int>("id_moneda"));
+                                        return m_Moneda;
+                                } else {
+                                        Lbl.Entidades.Pais PaisActual = new Lbl.Entidades.Pais(this.Connection, Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<int>("Sistema.Pais", 1));
+                                        if (PaisActual != null)
+                                                m_Moneda = PaisActual.Moneda;
+                                        else
+                                                m_Moneda = new Entidades.Moneda(Lfx.Workspace.Master.MasterConnection, 3);
+                                        return m_Moneda;
+                                }
+                                
+                        }
+                        set
+                        {
+                                m_Moneda = value;
+                                this.SetFieldValue("id_moneda", value);
+                        }
+                }
+
                 public decimal PuntoDeReposicion
 		{
 			get
@@ -221,6 +276,18 @@ namespace Lbl.Articulos
 				Registro["pvp"] = value;
 			}
 		}
+
+                public decimal PvpLocal
+                {
+                        get
+                        {
+                                if (Moneda.Cotizacion > 1)
+                                        return Moneda.Cotizacion * this.Pvp;
+                                else
+                                        return this.Pvp;
+                        }
+                        
+                }
 
                 public DbDateTime FechaPrecio
                 {
@@ -427,11 +494,28 @@ namespace Lbl.Articulos
                         }
                 }
 
+                public decimal CostoLocal
+                {
+                        get
+                        {
+
+                                if (Moneda.Cotizacion > 1)
+                                        return Moneda.Cotizacion * this.Costo;
+                                else
+                                        return this.Costo;
+                        }
+                }
+
                 public decimal ObtenerCosto()
                 {
-                        if (this.TipoDeArticulo == Articulos.TiposDeArticulo.ProductoCompuesto && this.Receta != null) {
+                        if (this.TipoDeArticulo == Articulos.TiposDeArticulo.ProductoCompuesto && this.Receta != null)
+                        {
+                                if (Moneda.Cotizacion > 1)
+                                        return Moneda.Cotizacion * Receta.Costo;
                                 return Receta.Costo;
-                        } else {
+                        } else
+                        {       if (Moneda.Cotizacion > 1)
+                                        return Moneda.Cotizacion * this.Costo;
                                 return this.Costo;
                         }
                 }
@@ -822,6 +906,11 @@ namespace Lbl.Articulos
                         else
                                 Comando.ColumnValues.AddWithValue("id_caja", this.Caja.Id);
 
+                        if (this.Moneda == null)
+                                Comando.ColumnValues.AddWithValue("id_moneda", null);
+                        else
+                                Comando.ColumnValues.AddWithValue("id_moneda", this.Moneda.Id);
+
                         Comando.ColumnValues.AddWithValue("modelo", this.Modelo);
                         Comando.ColumnValues.AddWithValue("serie", this.Serie);
                         Comando.ColumnValues.AddWithValue("nombre", this.Nombre);
@@ -854,7 +943,7 @@ namespace Lbl.Articulos
                         Comando.ColumnValues.AddWithValue("unidad_rend", this.UnidadRendimiento);
                         Comando.ColumnValues.AddWithValue("garantia", this.Garantia);
                         Comando.ColumnValues.AddWithValue("estado", this.Estado);
-                        switch(this.Publicacion)
+                        switch (this.Publicacion)
                         {
                                 case Publicacion.Nunca:
                                         Comando.ColumnValues.AddWithValue("web", 0);

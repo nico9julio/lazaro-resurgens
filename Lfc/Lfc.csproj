@@ -476,6 +476,11 @@
     <Compile Include="Misc\Desduplicar.Designer.cs">
       <DependentUpon>Desduplicar.cs</DependentUpon>
     </Compile>
+    <Compile Include="Monedas\Editar.cs" />
+    <Compile Include="Monedas\Editar.Designer.cs">
+      <DependentUpon>Editar.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Monedas\Inicio.cs" />
     <Compile Include="Pagos\FormasDePago\Inicio.cs" />
     <Compile Include="Pagos\Planes\Inicio.cs" />
     <Compile Include="Personas\AltaDuplicada.cs">
