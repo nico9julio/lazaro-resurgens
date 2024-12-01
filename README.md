@@ -45,7 +45,7 @@ Este proyecto está distribuido bajo la [Licencia Pública General de GNU, versi
 Sigue estos pasos para descargar, instalar y configurar **Lazaro Resurgens**:  
 
 ### 1. Descarga y descompresión  
-1. Ve a la sección [Releases](https://github.com/TU_REPOSITORIO/releases) de este repositorio.  
+1. Ve a la sección [Releases](https://github.com/nico9julio/lazaro-resurgens/releases) de este repositorio.  
 2. Descarga el archivo binario más reciente.  
 3. Descomprime el archivo en una carpeta de tu elección.  
 
