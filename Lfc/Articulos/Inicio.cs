@@ -29,9 +29,10 @@ namespace Lfc.Articulos
                                 Columns = new Lazaro.Pres.FieldCollection()
                                 {
 				        new Lazaro.Pres.Field("articulos.nombre", "Nombre", Lfx.Data.InputFieldTypes.Text, 320),
-                        new Lazaro.Pres.Field("IFNULL(monedas.nombre, '"+ MonedaLocal.Nombre +"')", "Moneda", Lfx.Data.InputFieldTypes.Text, 120),                                        
-                        new Lazaro.Pres.Field("IFNULL(monedas.cotizacion, 1)*articulos.costo", "Costo", Lfx.Data.InputFieldTypes.Currency, 96),                                        
-				        new Lazaro.Pres.Field("IFNULL(monedas.cotizacion, 1)*articulos.pvp", "PVP", Lfx.Data.InputFieldTypes.Currency, 96),
+                        new Lazaro.Pres.Field("IFNULL(monedas.nombre, '"+ MonedaLocal.Nombre +"')", "Moneda", Lfx.Data.InputFieldTypes.Text, 120),
+                        new Lazaro.Pres.Field("IFNULL(monedas.cotizacion, 1)*articulos.costo", "Costo", Lfx.Data.InputFieldTypes.Currency, 96),
+                        new Lazaro.Pres.Field("IFNULL(monedas.cotizacion, 1)*articulos.pvp", "PVP", Lfx.Data.InputFieldTypes.Currency, 96),
+                        
 				        new Lazaro.Pres.Field("articulos.stock_actual", "Stock Act", Lfx.Data.InputFieldTypes.Numeric, 96),
 				        new Lazaro.Pres.Field("articulos.stock_minimo", "Stock Mín", Lfx.Data.InputFieldTypes.Numeric, 96),
 				        new Lazaro.Pres.Field("articulos.pedido", "Pedidos", Lfx.Data.InputFieldTypes.Numeric, 96),
@@ -40,7 +41,7 @@ namespace Lfc.Articulos
 				        new Lazaro.Pres.Field("articulos.codigo1", "Código 1", Lfx.Data.InputFieldTypes.Text, 120),
 				        new Lazaro.Pres.Field("articulos.codigo2", "Código 2", Lfx.Data.InputFieldTypes.Text, 120),
 				        new Lazaro.Pres.Field("articulos.codigo3", "Código 3", Lfx.Data.InputFieldTypes.Text, 120),
-                                        new Lazaro.Pres.Field("articulos_categorias.nombre AS categorias_nombre", "Categoría", Lfx.Data.InputFieldTypes.Text, 120)
+                        new Lazaro.Pres.Field("articulos_categorias.nombre AS categorias_nombre", "Categoría", Lfx.Data.InputFieldTypes.Text, 120)
 			        },
 
                                 ExtraSearchColumns = new Lazaro.Pres.FieldCollection()
@@ -152,16 +153,16 @@ namespace Lfc.Articulos
                         if (m_PvpHasta != 0)
                                 this.CustomFilters.Add(new qGen.ComparisonCondition("articulos.pvp", qGen.ComparisonOperators.LessOrEqual, m_PvpHasta));
 
-                        if (m_Situacion != null && this.Definicion.Columns[3].Name != "articulos_stock.cantidad") {
+                        if (m_Situacion != null && this.Definicion.Columns[4].Name != "articulos_stock.cantidad") {
                                 this.CustomFilters.Add(new qGen.ComparisonCondition("articulos_stock.id_situacion", m_Situacion.Id));
                                 this.CustomFilters.Add(new qGen.ComparisonCondition("articulos_stock.cantidad", qGen.ComparisonOperators.NotEqual, 0));
                                 this.Definicion.Joins = this.FixedJoins();
                                 this.Definicion.Joins.Add(new qGen.Join("articulos_stock", "articulos.id_articulo=articulos_stock.id_articulo"));
-                                this.Definicion.Columns[3].Name = "articulos_stock.cantidad";
+                                this.Definicion.Columns[4].Name = "articulos_stock.cantidad";
                                 this.SetupListviewColumns();
-                        } else if (this.Definicion.Columns[3].Name != "articulos.stock_actual") {
+                        } else if (this.Definicion.Columns[4].Name != "articulos.stock_actual") {
                                 this.Definicion.Joins = this.FixedJoins();
-                                this.Definicion.Columns[3].Name = "articulos.stock_actual";
+                                this.Definicion.Columns[4].Name = "articulos.stock_actual";
                                 this.SetupListviewColumns();
                         }
 

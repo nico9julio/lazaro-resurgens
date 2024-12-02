@@ -476,7 +476,9 @@
     <Compile Include="Misc\Desduplicar.Designer.cs">
       <DependentUpon>Desduplicar.cs</DependentUpon>
     </Compile>
-    <Compile Include="Monedas\Editar.cs" />
+    <Compile Include="Monedas\Editar.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Monedas\Editar.Designer.cs">
       <DependentUpon>Editar.cs</DependentUpon>
     </Compile>

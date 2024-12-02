@@ -10,12 +10,10 @@ namespace Lazaro.WinMain.Misc
                 public AcercaDe()
                 {
                         InitializeComponent();
-
                         EtiquetaActualizar.Visible = Lfx.Updates.Updater.Master != null;
                 }
-
-
-                private void FormAcercaDe_Load(object sender, System.EventArgs e)
+        
+        private void FormAcercaDe_Load(object sender, System.EventArgs e)
                 {
                         ListaComponentes.BackColor = this.BackColor;
 
@@ -65,7 +63,7 @@ namespace Lazaro.WinMain.Misc
 
                 private void BotonWeb_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
                 {
-                        Help.ShowHelp(this, "http://www.lazarogestion.com");
+                        Help.ShowHelp(this, "https://github.com/nico9julio/lazaro-resurgens/");
                 }
 
                 private void TimerBuscarActualizaciones_Tick(object sender, EventArgs e)
@@ -129,5 +127,15 @@ namespace Lazaro.WinMain.Misc
                                 Lfx.Workspace.Master.RunTime.Toast("Está accediendo al almacén de datos a través de la red. Puede ver más información sobre el almacén de datos si utiliza esta misma opción en el equipo que tiene lo instalado (" + Lfx.Workspace.Master.ConnectionParameters.ServerName  + ").", "Aviso");
                         }
                 }
-	}
+
+        private void label1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void EtiquetaCopyright_Click(object sender, EventArgs e)
+        {
+
+        }
+    }
 }
