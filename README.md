@@ -1,3 +1,5 @@
+**ATENCIÓN - ESTA VERSIÓN MULTIMONEDA NO DEBE SER UTILIZADA EN PRODUCCION YA QUE HE DETECTADO INCONSISTENSIAS EN EL INFORME DE VALORES MEDIANTE WEBSERVICES A ARCA AFIP. ESTE BUG DEBE SER CORREGIDO. EN CASO DE FACTURAR ARTICULOS EN MONEDA PESOS EL ERROR NO SE PRESENTA.**
+
 # Lazaro-resurgens
 
 **Lazaro-resurgens** es un homenaje y continuación de un proyecto valioso que, gracias al trabajo y la visión de su creador original, sentó las bases para lo que hoy se renueva y transforma. Al igual que Lázaro fue traído de vuelta a la vida en la famosa historia bíblica, este proyecto revive, honra su legado y busca llevarlo más allá, impulsado por nuevas ideas y una comunidad comprometida con su crecimiento.
