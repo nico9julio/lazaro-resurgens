@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using PdfSharp;
 using PdfSharp.Drawing;
@@ -170,6 +170,13 @@ namespace Lazaro.Base.Util.Comprobantes
             };
 
             var LineaFina = new XPen(this.Color1, .3);
+
+            bool esHomo = Lbl.Sys.Config.AfipHomologacion || (Comprob.Obs != null && Comprob.Obs.Contains("[AFIP HOMOLOGACIÓN"));
+            if (esHomo) {
+                var BannerHomo = new XRect(0, 0, Pagina.Width, 7 * mm);
+                Gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(220, 53, 69)), BannerHomo);
+                Gfx.DrawString("COMPROBANTE NO FISCAL - MODO HOMOLOGACIÓN AFIP", new XFont(FuenteSans, 9, XFontStyle.Bold), XBrushes.White, BannerHomo, XStringFormats.Center);
+            }
 
             var CuadroEncab = new XRect(AreaUsable.Left, AreaUsable.Top, AreaUsable.Width, 30 * mm);
 
@@ -352,8 +359,12 @@ namespace Lazaro.Base.Util.Comprobantes
             CuadroPie.Offset(0, 1 * mm);
 
             Tf.Alignment = XParagraphAlignment.Left;
+            string textoCae = esHomo
+                ? "Comprobante DE PRUEBA (NO FISCAL)\nCAE Nº " + Comprob.CaeNumero + " (HOMOLOGACIÓN)\nCAE Vence " + Lfx.Types.Formatting.FormatDate(Comprob.CaeVencimiento)
+                : "Comprobante electrónico\nCAE Nº " + Comprob.CaeNumero + "\nCAE Vence " + Lfx.Types.Formatting.FormatDate(Comprob.CaeVencimiento);
+
             Tf.DrawString(
-                "Comprobante electrónico\nCAE Nº " + Comprob.CaeNumero + "\nCAE Vence " + Lfx.Types.Formatting.FormatDate(Comprob.CaeVencimiento),
+                textoCae,
                 FuentePequena,
                 XBrushes.Black,
                 new XRect(CuadroPie.Left + 130 * mm, CuadroPie.Top, CuadroPie.Width - 130 * mm, CuadroPie.Height)

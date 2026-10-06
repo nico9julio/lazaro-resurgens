@@ -1,9 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Afip.Ws.FacturaElectronica.Tablas;
 
 namespace Afip.Ws.FacturaElectronica
 {
@@ -15,7 +14,7 @@ namespace Afip.Ws.FacturaElectronica
                 /// <summary>
                 /// El tipo de comprobante.
                 /// </summary>
-                public ComprobantesTipos Tipo { get; set; }
+                public Tablas.ComprobantesTipos Tipo { get; set; }
 
                 /// <summary>
                 /// El punto de venta del comprobante.

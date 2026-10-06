@@ -1,7 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Xml;
+using System.Runtime.Serialization;
 using Afip.Ws.AfipAutenticacion;
 using Afip.Ws.AfipFe;
 
@@ -22,6 +24,82 @@ namespace Afip.Ws.FacturaElectronica
                 /// </summary>
                 public Autenticacion.TicketAcceso TicketAcceso { get; set; }
 
+                /// <summary>
+                /// Flag global para activar el modo debug / logging de payloads XML en todas las instancias.
+                /// </summary>
+                public static bool ModoDebug { get; set; }
+
+                /// <summary>
+                /// Flag por instancia para activar el modo debug / logging de payloads XML.
+                /// </summary>
+                public bool Debug { get; set; }
+
+                /// <summary>
+                /// URL oficial de WSFEv1 en producción.
+                /// </summary>
+                public const string UrlWsfeProduccion = "https://servicios1.afip.gov.ar/wsfev1/service.asmx";
+
+                /// <summary>
+                /// URL oficial de WSFEv1 en homologación (testing).
+                /// </summary>
+                public const string UrlWsfeHomologacion = "https://wswhomo.afip.gov.ar/wsfev1/service.asmx";
+
+                /// <summary>
+                /// Flag global para activar el modo homologación en todas las instancias.
+                /// </summary>
+                public static bool ModoHomologacion { get; set; }
+
+                /// <summary>
+                /// Flag por instancia para activar el modo homologación.
+                /// </summary>
+                public bool Homologacion { get; set; }
+
+                /// <summary>
+                /// URL personalizada del servicio WSFEv1. Si no se especifica, se determina automáticamente.
+                /// </summary>
+                public string Url { get; set; }
+
+                /// <summary>
+                /// Determina si esta instancia debe operar contra el entorno de homologación.
+                /// </summary>
+                public bool EsHomologacionActivo()
+                {
+                        return this.Homologacion 
+                                || ModoHomologacion 
+                                || Environment.GetEnvironmentVariable("LAZARO_AFIP_HOMOLOGACION") == "1"
+                                || Environment.GetEnvironmentVariable("AFIP_HOMO") == "1";
+                }
+
+                /// <summary>
+                /// Crea una instancia del cliente WCF ServiceSoapClient configurada según el entorno (Producción u Homologación).
+                /// </summary>
+                public ServiceSoapClient CrearClienteSoap()
+                {
+                        string url = this.Url;
+                        if (string.IsNullOrWhiteSpace(url)) {
+                                if (this.EsHomologacionActivo()) {
+                                        url = UrlWsfeHomologacion;
+                                }
+                        }
+
+                        if (string.IsNullOrWhiteSpace(url)) {
+                                return new ServiceSoapClient();
+                        } else {
+                                return new ServiceSoapClient("ServiceSoap", url);
+                        }
+                }
+
+                /// <summary>
+                /// Determina si el modo debug está activo para esta instancia (vía propiedad o variable de entorno LAZARO_AFIP_DEBUG / AFIP_DEBUG).
+                /// </summary>
+                public bool EsModoDebugActivo()
+                {
+                        return this.Debug 
+                                || ModoDebug 
+                                || Environment.GetEnvironmentVariable("LAZARO_AFIP_DEBUG") == "1"
+                                || Environment.GetEnvironmentVariable("AFIP_DEBUG") == "1";
+                }
+
                 public ServicioFacturaElectronica()
                 { }
 
@@ -35,10 +113,12 @@ namespace Afip.Ws.FacturaElectronica
                 /// <summary>
                 /// Consulta el estado de los servicios web de AFIP.
                 /// </summary>
+                /// <param name="homologacion">True para consultar el servidor de homologación</param>
                 /// <returns>True si los servicios están funcionando</returns>
-                public static bool ProbarEstadoServicios()
+                public static bool ProbarEstadoServicios(bool homologacion = false)
                 {
-                        using (var Clie = new ServiceSoapClient()) {
+                        string url = (homologacion || ModoHomologacion) ? UrlWsfeHomologacion : null;
+                        using (var Clie = string.IsNullOrWhiteSpace(url) ? new ServiceSoapClient() : new ServiceSoapClient("ServiceSoap", url)) {
                                 var Estado = Clie.FEDummy();
 
                                 return Estado.AppServer == "OK" && Estado.AuthServer == "OK"; // && Estado.DbServer == "OK";
@@ -58,7 +138,7 @@ namespace Afip.Ws.FacturaElectronica
                 /// </summary>
                 public CbteTipo[] ObtenerTiposDeComprobante()
                 {
-                        using (var Clie = new ServiceSoapClient()) {
+                        using (var Clie = this.CrearClienteSoap()) {
                                 var Res = Clie.FEParamGetTiposCbte(this.CrearFEAuthRequest());
 
                                 return Res.ResultGet;
@@ -70,7 +150,7 @@ namespace Afip.Ws.FacturaElectronica
                 /// </summary>
                 public ConceptoTipo[] ObtenerConceptos()
                 {
-                        using (var Clie = new ServiceSoapClient()) {
+                        using (var Clie = this.CrearClienteSoap()) {
                                 var Res = Clie.FEParamGetTiposConcepto(this.CrearFEAuthRequest());
 
                                 return Res.ResultGet;
@@ -84,7 +164,7 @@ namespace Afip.Ws.FacturaElectronica
                 /// <param name="tipoComprob">El tipo de comprobante a consultar.</param>
                 public FERecuperaLastCbteResponse UltimoComprobante(int pv, Tablas.ComprobantesTipos tipoComprob)
                 {
-                        using (var Clie = new ServiceSoapClient()) {
+                        using (var Clie = this.CrearClienteSoap()) {
                                 var Res = Clie.FECompUltimoAutorizado(this.CrearFEAuthRequest(), pv, (int)tipoComprob);
 
                                 return Res;
@@ -98,7 +178,7 @@ namespace Afip.Ws.FacturaElectronica
                 /// <returns>La cantidad de comprobantes aprobados, o 0 si todos fueron rechazados.</returns>
                 public int SolictarCae(SolicitudCae solCae)
                 {
-                        using (var Clie = new ServiceSoapClient()) {
+                        using (var Clie = this.CrearClienteSoap()) {
 
                                 var DetallesComprobantes = new FECAEDetRequest[solCae.Comprobantes.Count];
 
@@ -120,6 +200,9 @@ namespace Afip.Ws.FacturaElectronica
                                                 //ImpTrib = Comprob.TotalTributos(),
                                                 MonId = "PES",
                                                 MonCotiz = 1,
+                                                CondicionIVAReceptorId = Comprob.Cliente != null && Comprob.Cliente.CondicionIvaReceptorId > 0
+                                                        ? Comprob.Cliente.CondicionIvaReceptorId
+                                                        : 5,
                                         };
 
                                         // Agregar comprobantes asociados
@@ -179,7 +262,20 @@ namespace Afip.Ws.FacturaElectronica
                                 };
 
                                 // Llamar al WS para hacer la solicitud
-                                var Res = Clie.FECAESolicitar(this.CrearFEAuthRequest(), CaeReq);
+                                var AuthReq = this.CrearFEAuthRequest();
+
+                                // Si el modo debug está activo, volcar payload saliente
+                                if (this.EsModoDebugActivo()) {
+                                        VolcarXmlDebug("FECAESolicitar_Request", AuthReq, CaeReq);
+                                }
+
+                                var Res = Clie.FECAESolicitar(AuthReq, CaeReq);
+
+                                // Si el modo debug está activo, volcar respuesta entrante
+                                if (this.EsModoDebugActivo()) {
+                                        VolcarXmlDebug("FECAESolicitar_Response", Res);
+                                }
+
                                 var Aprobados = 0;
 
                                 solCae.Observaciones = new List<Observacion>();
@@ -259,6 +355,53 @@ namespace Afip.Ws.FacturaElectronica
                         // También podría ser 10 - (N módulo de 10) si N > 0
 
                         return Resultado;
+                }
+
+                /// <summary>
+                /// Vuelca objetos serializados a XML en consola y en un archivo de texto en la carpeta temporal (%TEMP%),
+                /// permitiendo inspeccionar los payloads XML de envío y respuesta de AFIP cuando el modo debug está activo.
+                /// </summary>
+                /// <param name="etiqueta">Identificador para el volcado (ej: FECAESolicitar_Request).</param>
+                /// <param name="objetos">Los objetos DataContract a serializar en el volcado.</param>
+                public static void VolcarXmlDebug(string etiqueta, params object[] objetos)
+                {
+                        try {
+                                var sb = new StringBuilder();
+                                sb.AppendLine("<!-- ===================================================================== -->");
+                                sb.AppendLine(string.Format("<!-- AFIP DEBUG DUMP: {0} - {1:yyyy-MM-dd HH:mm:ss} -->", etiqueta, DateTime.Now));
+                                sb.AppendLine("<!-- ===================================================================== -->");
+
+                                foreach (var obj in objetos) {
+                                        if (obj == null) continue;
+                                        var serializer = new DataContractSerializer(obj.GetType());
+                                        var settings = new XmlWriterSettings
+                                        {
+                                                Indent = true,
+                                                Encoding = Encoding.UTF8,
+                                                OmitXmlDeclaration = true
+                                        };
+                                        using (var sw = new System.IO.StringWriter()) {
+                                                using (var writer = XmlWriter.Create(sw, settings)) {
+                                                        serializer.WriteObject(writer, obj);
+                                                }
+                                                sb.AppendLine(sw.ToString());
+                                        }
+                                }
+
+                                string contenido = sb.ToString();
+
+                                // Emitir por consola estándar y Debug
+                                Console.WriteLine(contenido);
+                                System.Diagnostics.Debug.WriteLine(contenido);
+
+                                // Guardar en archivo de texto en directorio temporal (%TEMP%)
+                                string nombreArchivo = string.Format("afip_{0}.xml", etiqueta.ToLowerInvariant());
+                                string rutaArchivo = System.IO.Path.Combine(System.IO.Path.GetTempPath(), nombreArchivo);
+                                System.IO.File.WriteAllText(rutaArchivo, contenido, Encoding.UTF8);
+                                Console.WriteLine(string.Format("[AFIP DEBUG] Payload guardado en: {0}", rutaArchivo));
+                        } catch (Exception ex) {
+                                Console.WriteLine(string.Format("[AFIP DEBUG ERROR] Error al volcar XML: {0}", ex.Message));
+                        }
                 }
         }
 }

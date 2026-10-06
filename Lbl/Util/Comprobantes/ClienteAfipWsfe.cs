@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Afip.Ws.FacturaElectronica;
@@ -92,6 +92,11 @@ namespace Lazaro.Base.Util.Comprobantes
                                 
                         }
 
+                        // RG 5616: Asignar condición frente al IVA del receptor
+                        if (ComprobanteSolCae.Cliente != null) {
+                                ComprobanteSolCae.Cliente.CondicionIvaReceptorId = MapearCondicionIvaReceptor(comprobante.Cliente);
+                        }
+
                         // Agregar conceptos al comprobante, agrupados por alícuota
                         if(comprobante.Tipo.Letra == "C") {
                                 // El comprobante C lleva características especiales
@@ -144,6 +149,70 @@ namespace Lazaro.Base.Util.Comprobantes
                         };
 
                         return SolCae;
+                }
+
+                /// <summary>
+                /// Mapea la condición fiscal del contacto al código CondicionIVAReceptorId requerido por AFIP según RG 5616.
+                /// Códigos AFIP (consultables vía FEParamGetCondicionIvaReceptor):
+                /// 1: IVA Responsable Inscripto
+                /// 4: IVA Sujeto Exento
+                /// 5: Consumidor Final
+                /// 6: Responsable Monotributo
+                /// 7: Sujeto No Categorizado
+                /// 15: IVA No Alcanzado
+                /// </summary>
+                /// <param name="cliente">El contacto / cliente receptor.</param>
+                /// <returns>El código numérico correspondiente de AFIP.</returns>
+                public static int MapearCondicionIvaReceptor(Lbl.Personas.Persona cliente)
+                {
+                        if (cliente == null || cliente.SituacionTributaria == null) {
+                                return 5; // Predeterminado: Consumidor Final
+                        }
+
+                        // Mapeo por ID de situación en la BD local de Lázaro (tabla 'situaciones')
+                        switch (cliente.SituacionTributaria.Id) {
+                                case 1:
+                                        // Consumidor Final
+                                        return 5;
+                                case 2:
+                                        // Responsable Inscripto
+                                        return 1;
+                                case 3:
+                                        // Responsable No Inscripto
+                                        return 7;
+                                case 4:
+                                        // Responsable Monotributista
+                                        return 6;
+                                case 5:
+                                        // Exento
+                                        return 4;
+                                case 6:
+                                        // No Responsable
+                                        return 15;
+                                case 7:
+                                        // No Categorizado
+                                        return 7;
+                        }
+
+                        // Salvaguarda por abreviatura de situación tributaria
+                        var abrev = (cliente.SituacionTributaria.Abreviatura ?? "").Trim().ToUpperInvariant();
+                        switch (abrev) {
+                                case "RI":
+                                        return 1;
+                                case "EX":
+                                        return 4;
+                                case "CF":
+                                        return 5;
+                                case "M":
+                                        return 6;
+                                case "NI":
+                                case "NC":
+                                        return 7;
+                                case "NR":
+                                        return 15;
+                        }
+
+                        return 5;
                 }
         }
 }
