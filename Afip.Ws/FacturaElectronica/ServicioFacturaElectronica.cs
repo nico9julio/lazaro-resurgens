@@ -95,7 +95,8 @@ namespace Afip.Ws.FacturaElectronica
                 public bool EsModoDebugActivo()
                 {
                         return this.Debug 
-                                || ModoDebug 
+                                || ModoDebug
+                                || System.Diagnostics.Debugger.IsAttached
                                 || Environment.GetEnvironmentVariable("LAZARO_AFIP_DEBUG") == "1"
                                 || Environment.GetEnvironmentVariable("AFIP_DEBUG") == "1";
                 }

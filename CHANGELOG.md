@@ -15,13 +15,15 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
   - Método `MapearCondicionIvaReceptor(Persona cliente)` en `ClienteAfipWsfe.cs` para traducir situaciones tributarias locales (Consumidor Final, Resp. Inscripto, Monotributo, Exento, etc.) a códigos oficiales de AFIP (1, 4, 5, 6, 7, 15).
   - Inyección automática del código de condición fiscal del receptor en cada comprobante del lote en `FECAEDetRequest`.
 - **Entorno de Homologación Dinámico:**
-  - Propiedad estática `Config.AfipHomologacion` con persistencia en la tabla `sys_config` (`AFIP.Homologacion`) para alternar entre producción y homologación con un solo clic o flag.
+  - Control visual en Preferencias: Casilla de verificación `CheckAfipHomologacion` en la solapa "Comprobantes" para alternar fácilmente entre entorno oficial y homologación con un solo clic y retroalimentación de estado en tiempo real.
+  - Propiedad estática `Config.AfipHomologacion` con persistencia en la tabla `sys_config` (`AFIP.Homologacion`).
   - Soporte de conmutación sin cambios en base de datos mediante variables de entorno `LAZARO_AFIP_HOMOLOGACION=1` o `AFIP_HOMO=1`.
   - Factoría de clientes WCF `CrearClienteSoap()` y resolución dinámica de endpoints en `ServicioFacturaElectronica` y `ServicioAutenticacion` (WSAA).
 - **Coexistencia de Certificados Digitales:**
   - Búsqueda inteligente de certificados: `Certificado_homo.p12` en homologación y `Certificado_prod.p12` / `Certificado.p12` en producción. Permite tener ambos certificados en la carpeta `AFIP` del negocio sin rotación manual.
 - **Modo Debug / Volcado XML:**
-  - Método `VolcarXmlDebug()` en `ServicioFacturaElectronica` para formatear y volcar los payloads SOAP salientes y entrantes a consola y a archivos de texto en `%TEMP%\afip_fecaesolicitar_*.xml` bajo demanda (`LAZARO_AFIP_DEBUG=1` o `ServicioFacturaElectronica.ModoDebug = true`).
+  - Detección automática de depuración en Visual Studio: `System.Diagnostics.Debugger.IsAttached` activa el modo debug sin requerir configuración manual.
+  - Método `VolcarXmlDebug()` en `ServicioFacturaElectronica` para formatear y volcar los payloads SOAP salientes y entrantes a consola y a archivos de texto en `%TEMP%\afip_fecaesolicitar_*.xml` bajo demanda (`LAZARO_AFIP_DEBUG=1`, depuración en VS o `ServicioFacturaElectronica.ModoDebug = true`).
 - **Salvaguardas de Seguridad para Homologación:**
   - Bloqueo preventivo por colisión numérica inminente contra la base de datos local en `ComprobanteController.ImprimirFacturaElectronicaAfip`.
   - Detección de Punto de Venta productivo para advertir y frenar emisiones accidentales de prueba en puntos de venta reales.

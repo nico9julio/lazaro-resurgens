@@ -113,6 +113,9 @@ namespace Lazaro.WinMain.Config
 
                         EntradaLimiteCredito.Text = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Cuentas.LimiteCreditoPredet", "0");
 
+                        CheckAfipHomologacion.Checked = Lbl.Sys.Config.AfipHomologacion;
+                        ActualizarAvisoHomologacion();
+
                         int PaisActual = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<int>("Sistema.Pais", 0);
                         IdPaisOriginal = PaisActual;
                         if (PaisActual == 0)
@@ -214,6 +217,7 @@ namespace Lazaro.WinMain.Config
                         Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Documentos.CambiaPrecioItemFactura", EntradaCambiaPrecioComprob.Value ? 1 : 0);
 
                         Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Cuentas.LimiteCreditoPredet", EntradaLimiteCredito.ValueDecimal);
+                        Lbl.Sys.Config.AfipHomologacion = CheckAfipHomologacion.Checked;
 
                         Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Provincia", EntradaProvincia.ValueInt);
                         Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Localidad", EntradaLocalidad.ValueInt);
@@ -345,6 +349,20 @@ namespace Lazaro.WinMain.Config
                 {
                         CurrentTab = 4;
                         this.MostrarPestanias();
+                }
+
+                private void CheckAfipHomologacion_CheckedChanged(object sender, System.EventArgs e)
+                {
+                        ActualizarAvisoHomologacion();
+                }
+
+                private void ActualizarAvisoHomologacion()
+                {
+                        if (CheckAfipHomologacion.Checked) {
+                                LabelAfipHomoAviso.Text = "(MODO PRUEBAS ACTIVO: Utiliza servidores de homologación AFIP. Sin validez fiscal)";
+                        } else {
+                                LabelAfipHomoAviso.Text = "(Utiliza servidores de producción oficiales de AFIP con validez fiscal)";
+                        }
                 }
         }
 }
