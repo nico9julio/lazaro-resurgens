@@ -352,7 +352,7 @@ namespace Lbl.Comprobantes
         {
             get
             {
-                return Math.Round(this.SubtotalSinIva * this.FactorDescuentoORecargo, 4);
+                return Math.Round(this.SubtotalSinIva * this.FactorDescuentoORecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
             }
         }
 
@@ -367,9 +367,9 @@ namespace Lbl.Comprobantes
                 decimal Res = 0;
                 foreach (DetalleArticulo Art in this.Articulos)
                 {
-                    Res += Math.Round(Art.ImporteSinIvaFinal, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales);
+                    Res += Math.Round(Art.ImporteSinIvaFinal, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
                 }
-                return Res;
+                return Math.Round(Res, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
             }
         }
 
@@ -408,7 +408,7 @@ namespace Lbl.Comprobantes
         {
             get
             {
-                return Math.Round((this.SubtotalSinIva + this.ImporteIva) * this.FactorDescuentoORecargo, 4);
+                return Math.Round((this.SubtotalSinIva + this.ImporteIva) * this.FactorDescuentoORecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
             }
         }
 
@@ -430,7 +430,7 @@ namespace Lbl.Comprobantes
         {
             get
             {
-                return Math.Round(this.ImporteIva * this.FactorDescuentoORecargo, 4);
+                return Math.Round(this.ImporteIva * this.FactorDescuentoORecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
             }
         }
 
@@ -458,24 +458,28 @@ namespace Lbl.Comprobantes
                 decimal Res = 0m;
                 foreach (DetalleArticulo Det in this.Articulos)
                 {
-                    Res += Det.ImporteIvaUnitarioFinal * Det.Cantidad;
+                    var alic = Det.ObtenerAlicuota();
+                    if (alic != null)
+                        Res += Det.ImporteIvaFinalAlicuota(alic.Id);
+                    else
+                        Res += Math.Round(Det.ImporteIvaUnitarioFinal * Det.Cantidad, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
                 }
-                return this.RedondearImporte(Math.Round(Res, 4));
+                return this.RedondearImporte(Math.Round(Res, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero));
             }
         }
 
         /// <summary>
-        /// Redondea y trunca un importe según la configuración de decimales y redondeo del sistema.
+        /// Redondea un importe según la configuración de decimales y redondeo del sistema.
         /// </summary>
         /// <param name="importe">El importe a redondear.</param>
-        /// <returns>El importe redondeado y truncado.</returns>
+        /// <returns>El importe redondeado.</returns>
         public decimal RedondearImporte(decimal importe)
         {
             decimal Redondeo = Lbl.Sys.Config.Moneda.UnidadMonetariaMinima;
             if (this.Compra || Redondeo == 0)
-                return Lfx.Types.Currency.Truncate(importe, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales);
+                return Math.Round(importe, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
             else
-                return Lfx.Types.Currency.Truncate(Math.Floor(importe / Redondeo) * Redondeo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales);
+                return Math.Round(Math.Floor(importe / Redondeo) * Redondeo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
         }
 
         public Lbl.Pagos.FormaDePago FormaDePago
@@ -540,7 +544,7 @@ namespace Lbl.Comprobantes
         {
             get
             {
-                return Math.Round(this.ImporteIvaDiscriminado * this.FactorDescuentoORecargo, 4);
+                return Math.Round(this.ImporteIvaDiscriminado * this.FactorDescuentoORecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
             }
         }
 
@@ -565,7 +569,7 @@ namespace Lbl.Comprobantes
                 {
                     Res += Det.ImporteIvaDiscriminadoFinal;
                 }
-                return Math.Round(Res, 4);
+                return Math.Round(Res, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
             }
         }
 
@@ -575,12 +579,7 @@ namespace Lbl.Comprobantes
         /// </summary>
         public decimal TotalConIvaAlicuota(int idAlicuota)
         {
-            decimal Res = 0;
-            foreach (DetalleArticulo Det in this.Articulos)
-            {
-                Res += Det.ImporteConIvaFinalAlicuota(idAlicuota);
-            }
-            return Math.Round(Res, 4);
+            return this.ImporteGravadoAlicuota(idAlicuota) + this.TotalIvaAlicuota(idAlicuota);
         }
 
 
@@ -594,46 +593,42 @@ namespace Lbl.Comprobantes
             {
                 Res += Det.ImporteSinIvaFinalAlicuota(idAlicuota);
             }
-            return Math.Round(Res, 4);
+            return Math.Round(Res * this.FactorDescuentoORecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
         }
 
 
         /// <summary>
         /// Devuelve la cantidad de IVA que este comprobante lleva de una alícuota en particular, o 0 si este artículo no se le aplica esa alícuota.
-        /// Útil para Paraguay, donde por cada renglón de la factura van dos columnas, una con el importe IVA tasa regular y
-        /// otra con la tasa reducida (o cero). Una de las dos columnas puede estar en blanco.
         /// </summary>
         public decimal TotalIvaAlicuota(int idAlicuota)
         {
-            /* if (this.Cliente != null && this.Cliente.PagaIva == Impuestos.SituacionIva.Exento)
-                    return 0;
-            */
+            if (this.Cliente != null && this.Cliente.ObtenerSituacionIva() == Impuestos.SituacionIva.Exento)
+                return 0m;
+
+            if (this.Cliente != null && this.Cliente.Localidad != null && this.Cliente.Localidad.ObtenerIva() == Impuestos.SituacionIva.Exento)
+                return 0m;
+
+            if (Lbl.Sys.Config.Empresa.AlicuotaPredeterminada.Id == 4)
+                return 0m;
 
             decimal Res = 0;
             foreach (DetalleArticulo Det in this.Articulos)
             {
                 Res += Det.ImporteIvaFinalAlicuota(idAlicuota);
             }
-            return Math.Round(Res, 4);
+            return Math.Round(Res * this.FactorDescuentoORecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
         }
 
 
         /// <summary>
-        /// Devuelve la cantidad de IVA que este comprobante lleva de una alícuota en particular, o 0 si este artículo no se le aplica esa alícuota.
-        /// Útil para Paraguay, donde por cada renglón de la factura van dos columnas, una con el importe IVA tasa regular y
-        /// otra con la tasa reducida (o cero). Una de las dos columnas puede estar en blanco.
+        /// Devuelve la base imponible sin IVA que este comprobante lleva de una alícuota en particular, o 0 si no aplica.
         /// </summary>
         public decimal TotalSinIvaAlicuota(int idAlicuota)
         {
             if (this.Cliente != null && this.Cliente.ObtenerSituacionIva() == Impuestos.SituacionIva.Exento)
-                return 0;
+                return 0m;
 
-            decimal Res = 0;
-            foreach (DetalleArticulo Det in this.Articulos)
-            {
-                Res += Det.ImporteSinIvaFinalAlicuota(idAlicuota);
-            }
-            return Math.Round(Res, 4);
+            return this.ImporteGravadoAlicuota(idAlicuota);
         }
 
 

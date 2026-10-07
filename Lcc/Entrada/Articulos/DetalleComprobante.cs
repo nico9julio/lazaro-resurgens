@@ -293,7 +293,7 @@ namespace Lcc.Entrada.Articulos
 
                                 if (m_DiscriminarIva != AntesDiscriminaba && m_AplicarIva && m_Alicuota != null) {
                                         if (value) {
-                                                // Antes no discriminaba y ahora sÌ
+                                                // Antes no discriminaba y ahora s√≠
                                                 this.EstablecerImporteUnitarioOriginal(this.ImporteUnitario / (1 + m_Alicuota.Porcentaje / 100m));
                                         } else {
                                                 // Antes discriminaba y ahora no
@@ -330,7 +330,7 @@ namespace Lcc.Entrada.Articulos
                                 if (m_AplicarIva != AntesAplicaba && m_Alicuota != null) {
                                         decimal NuevoImporteUnitarioIva = this.ImporteUnitario * (m_Alicuota.Porcentaje / 100m);
                                         if (value) {
-                                                // Antes no aplicaba y ahora sÌ
+                                                // Antes no aplicaba y ahora s√≠
                                                 this.EstablecerImporteUnitarioOriginal(this.ImporteUnitario);
                                         } else {
                                                 // Antes aplicaba y ahora no
@@ -481,7 +481,7 @@ namespace Lcc.Entrada.Articulos
                 }
 
                 /// <summary>
-                /// El importe de IVA discriminado unitario (sin descuento), o 0 si el IVA no est· discriminado.
+                /// El importe de IVA discriminado unitario (sin descuento), o 0 si el IVA no est√° discriminado.
                 /// </summary>
                 [EditorBrowsable(EditorBrowsableState.Never), Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
                 public decimal ImporteIvaDiscriminadoUnitario
@@ -969,51 +969,60 @@ namespace Lcc.Entrada.Articulos
 
 
                 /// <summary>
-                /// Cambia el importe unitario original (sin IVA), y adem·s recalcula el IVA y lo muestra discriminado si corresponde.
+                /// Cambia el importe unitario original (sin IVA), y adem√°s recalcula el IVA y lo muestra discriminado si corresponde.
                 /// </summary>
-                /// <param name="unitario">El precio unitario a mostrar y usar como base para el c·lculo de IVA e importe final.</param>
+                /// <param name="unitario">El precio unitario a mostrar y usar como base para el c√°lculo de IVA e importe final.</param>
                 protected void EstablecerImporteUnitarioOriginal(decimal unitario)
                 {
+                        int decimales = Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales;
+                        unitario = Math.Round(unitario, decimales, MidpointRounding.AwayFromZero);
+
                         if (this.AplicarIva && m_Alicuota != null) {
-                                this.ImporteIvaUnitario = unitario * (m_Alicuota.Porcentaje / 100m);
+                                decimal iva = Math.Round(unitario * (m_Alicuota.Porcentaje / 100m), decimales, MidpointRounding.AwayFromZero);
+                                this.ImporteIvaUnitario = iva;
                                 if (this.DiscriminarIva) {
                                         EntradaUnitario.ValueDecimal = unitario;
-                                        EntradaIva.ValueDecimal = this.ImporteIvaUnitario;
+                                        EntradaIva.ValueDecimal = iva;
                                 } else {
-                                        EntradaUnitario.ValueDecimal = unitario + this.ImporteIvaUnitario;
+                                        EntradaUnitario.ValueDecimal = unitario + iva;
                                         EntradaIva.ValueDecimal = 0m;
                                 }
                         } else {
                                 this.ImporteIvaUnitario = 0m;
                                 EntradaUnitario.ValueDecimal = unitario;
-                                EntradaIva.ValueDecimal = 0;
+                                EntradaIva.ValueDecimal = 0m;
                         }
                 }
 
 
                 /// <summary>
-                /// Recalcula el importe final, seg˙n importe, IVA, cantidad y descuento.
+                /// Recalcula el importe final, seg√∫n importe, IVA, cantidad y descuento.
                 /// </summary>
                 protected void RecalcularImporteFinal()
                 {
-                        if(m_DiscriminarIva) {
-                                if(m_AplicarIva && this.m_Alicuota != null) {
-                                        decimal Iva = this.ImporteUnitario * (this.m_Alicuota.Porcentaje / 100m);
-                                        if(Math.Abs(this.ImporteIvaUnitario - Iva) > 0.01m) {
-                                                this.ImporteIvaUnitario = Iva;
-                                        }
+                        int decimales = Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales;
+
+                        if (m_DiscriminarIva) {
+                                if (m_AplicarIva && this.m_Alicuota != null) {
+                                        decimal Iva = Math.Round(this.ImporteUnitario * (this.m_Alicuota.Porcentaje / 100m), decimales, MidpointRounding.AwayFromZero);
+                                        this.ImporteIvaUnitario = Iva;
                                 } else {
-                                        if(this.ImporteIvaUnitario != 0m) {
-                                                this.ImporteIvaUnitario = 0m;
-                                        }
+                                        this.ImporteIvaUnitario = 0m;
                                 }
                                 EntradaIva.ValueDecimal = this.ImporteIvaUnitario;
                         } else {
+                                if (m_AplicarIva && this.m_Alicuota != null && this.m_Alicuota.Porcentaje > 0) {
+                                        decimal precioConIva = this.ImporteUnitario;
+                                        decimal neto = Math.Round(precioConIva / (1m + this.m_Alicuota.Porcentaje / 100m), decimales, MidpointRounding.AwayFromZero);
+                                        this.ImporteIvaUnitario = precioConIva - neto;
+                                } else {
+                                        this.ImporteIvaUnitario = 0m;
+                                }
                                 EntradaIva.ValueDecimal = 0m;
                         }
 
                         try {
-                                decimal ImporteFinal = (this.ImporteUnitario + this.ImporteIvaDiscriminadoUnitario) * this.Cantidad * (1m - this.Descuento / 100m);
+                                decimal ImporteFinal = Math.Round((this.ImporteUnitario + this.ImporteIvaDiscriminadoUnitario) * this.Cantidad * (1m - this.Descuento / 100m), decimales, MidpointRounding.AwayFromZero);
                                 EntradaImporte.ValueDecimal = ImporteFinal;
                         } catch {
                                 EntradaImporte.ValueDecimal = 0m;

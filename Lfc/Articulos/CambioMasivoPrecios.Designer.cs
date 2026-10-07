@@ -186,6 +186,7 @@ namespace Lfc.Articulos
                         // ColMoneda
                         // 
                         this.ColMoneda.Text = "Moneda";
+                        this.ColMoneda.Width = 80;
                         // 
                         // CambioMasivoPrecios
                         // 

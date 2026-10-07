@@ -224,13 +224,17 @@ namespace Lfc.Articulos
                 {
                         var FormPrecios = new CambioMasivoPrecios();
 
-                        foreach(ListViewItem Itm in this.Listado.Items) {
-                                ListViewItem NuevoItm = FormPrecios.ListadoArticulos.Items.Add(Itm.SubItems["articulos.nombre"].Text);
+                        foreach (ListViewItem Itm in this.Listado.Items) {
+                                if (Itm.SubItems.Count < 5)
+                                        continue;
+
+                                ListViewItem NuevoItm = FormPrecios.ListadoArticulos.Items.Add(Itm.SubItems[1].Text);
                                 NuevoItm.Tag = Itm.Text;
-                                NuevoItm.SubItems.Add(Itm.SubItems["articulos.costo"].Text);
-                                NuevoItm.SubItems.Add(Itm.SubItems["articulos.costo"].Text);
-                                NuevoItm.SubItems.Add(Itm.SubItems["articulos.pvp"].Text);
-                                NuevoItm.SubItems.Add(Itm.SubItems["articulos.pvp"].Text);
+                                NuevoItm.SubItems.Add(Itm.SubItems[2].Text);
+                                NuevoItm.SubItems.Add(Itm.SubItems[3].Text);
+                                NuevoItm.SubItems.Add(Itm.SubItems[3].Text);
+                                NuevoItm.SubItems.Add(Itm.SubItems[4].Text);
+                                NuevoItm.SubItems.Add(Itm.SubItems[4].Text);
                         }
 
                         FormPrecios.ShowDialog();

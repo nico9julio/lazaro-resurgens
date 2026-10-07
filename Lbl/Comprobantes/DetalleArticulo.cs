@@ -209,7 +209,11 @@ namespace Lbl.Comprobantes
                 {
                         get
                         {
-                                return this.Cantidad * this.ImporteUnitarioFinalAImprimir;
+                                if (this.ComprobanteDiscriminaIva()) {
+                                        return this.ImporteSinIvaFinal;
+                                } else {
+                                        return this.ImporteTotalConIvaFinal;
+                                }
                         }
                 }
 
@@ -221,7 +225,17 @@ namespace Lbl.Comprobantes
                 {
                         get
                         {
-                                return this.Cantidad * this.ImporteUnitarioSinIvaFinal;
+                                if (this.ComprobanteDiscriminaIva()) {
+                                        return Math.Round(this.Cantidad * this.ImporteUnitarioSinIvaFinal, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
+                                } else {
+                                        var Alic = this.ObtenerAlicuota();
+                                        if (Alic != null && Alic.Porcentaje > 0) {
+                                                decimal totalConIva = this.ImporteTotalConIvaFinal;
+                                                return Math.Round(totalConIva / (1m + Alic.Porcentaje / 100m), Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
+                                        } else {
+                                                return this.ImporteTotalConIvaFinal;
+                                        }
+                                }
                         }
                 }
 
@@ -236,9 +250,9 @@ namespace Lbl.Comprobantes
                         get
                         {
                                 if(this.ComprobanteDiscriminaIva()) {
-                                        return this.ImporteUnitario * this.FactorDescuentoRecargo;
+                                        return Math.Round(this.ImporteUnitario * this.FactorDescuentoRecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
                                 } else {
-                                        return (this.ImporteUnitario - this.ImporteIvaUnitario) * this.FactorDescuentoRecargo;
+                                        return Math.Round((this.ImporteUnitario - this.ImporteIvaUnitario) * this.FactorDescuentoRecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
                                 }
                                 
                         }
@@ -253,9 +267,9 @@ namespace Lbl.Comprobantes
                         get
                         {
                                 if (this.ComprobanteDiscriminaIva()) {
-                                        return (this.ImporteUnitario + this.ImporteIvaUnitario) * this.FactorDescuentoRecargo;
+                                        return Math.Round((this.ImporteUnitario + this.ImporteIvaUnitario) * this.FactorDescuentoRecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
                                 } else {
-                                        return this.ImporteUnitario * this.FactorDescuentoRecargo;
+                                        return Math.Round(this.ImporteUnitario * this.FactorDescuentoRecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
                                 }
 
                         }
@@ -269,7 +283,7 @@ namespace Lbl.Comprobantes
                 {
                         get
                         {
-                                return this.ImporteUnitarioConIvaFinal * this.Cantidad;
+                                return Math.Round(this.ImporteUnitarioConIvaFinal * this.Cantidad, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
 
                         }
                 }
@@ -282,7 +296,11 @@ namespace Lbl.Comprobantes
                 {
                         get
                         {
-                                return this.ImporteUnitarioAImprimir * (1 + this.Recargo / 100);
+                                if (this.ComprobanteDiscriminaIva()) {
+                                        return this.ImporteUnitarioSinIvaFinal;
+                                } else {
+                                        return this.ImporteUnitarioConIvaFinal;
+                                }
                         }
                 }
 
@@ -339,7 +357,7 @@ namespace Lbl.Comprobantes
                         get
                         {
                                 if (this.ComprobanteDiscriminaIva()) {
-                                        return this.ImporteIvaUnitario * this.Cantidad * this.FactorDescuentoRecargo;
+                                        return Math.Round(this.ImporteIvaUnitario * this.Cantidad * this.FactorDescuentoRecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
                                 } else {
                                         return 0m;
                                 }
@@ -355,11 +373,7 @@ namespace Lbl.Comprobantes
                         Lbl.Impuestos.Alicuota Alic = this.ObtenerAlicuota();
 
                         if (Alic != null && Alic.Id == idAlicuota) {
-                                if (this.ComprobanteDiscriminaIva()) {
-                                        return (this.ImporteUnitario + this.ImporteIvaUnitario) * this.Cantidad * this.FactorDescuentoRecargo;
-                                } else {
-                                        return this.ImporteUnitario * this.Cantidad * this.FactorDescuentoRecargo;
-                                }
+                                return this.ImporteTotalConIvaFinal;
                         } else {
                                 return 0m;
                         }
@@ -376,8 +390,12 @@ namespace Lbl.Comprobantes
                 {
                         var Alic = this.ObtenerAlicuota();
 
-                        if (this.Alicuota != null && this.Alicuota.Id == idAlicuota) {
-                                return this.ImporteIvaUnitario * this.Cantidad * this.FactorDescuentoRecargo;
+                        if (Alic != null && Alic.Id == idAlicuota) {
+                                if (this.ComprobanteDiscriminaIva()) {
+                                        return Math.Round(this.ImporteSinIvaFinal * (Alic.Porcentaje / 100m), Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
+                                } else {
+                                        return this.ImporteTotalConIvaFinal - this.ImporteSinIvaFinal;
+                                }
                         } else {
                                 return 0m;
                         }
@@ -424,7 +442,7 @@ namespace Lbl.Comprobantes
                 public decimal ImporteSinIvaFinalAlicuota(int idAlicuota)
                 {
                         var Alic = this.ObtenerAlicuota();
-                        if(Alic.Id == idAlicuota) {
+                        if (Alic != null && Alic.Id == idAlicuota) {
                                 return this.ImporteSinIvaFinal;
                         } else {
                                 return 0m;

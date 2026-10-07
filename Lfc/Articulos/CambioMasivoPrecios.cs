@@ -34,10 +34,13 @@ namespace Lfc.Articulos
                 {
                         using (var Trans = this.Connection.BeginTransaction()) {
                                 foreach (ListViewItem Itm in this.Listado.Items) {
+                                        if (Itm.SubItems.Count < 5 || Itm.Tag == null)
+                                                continue;
+
                                         int ArtId = Lfx.Types.Parsing.ParseInt(Itm.Tag.ToString());
 
-                                        decimal Costo = Lfx.Types.Parsing.ParseCurrency(Itm.SubItems[1].Text);
-                                        decimal Pvp = Lfx.Types.Parsing.ParseCurrency(Itm.SubItems[3].Text);
+                                        decimal Costo = Lfx.Types.Parsing.ParseCurrency(Itm.SubItems[2].Text);
+                                        decimal Pvp = Lfx.Types.Parsing.ParseCurrency(Itm.SubItems[4].Text);
 
                                         decimal NuevoCosto = 0m;
                                         decimal NuevoPvp = 0m;
@@ -112,9 +115,12 @@ namespace Lfc.Articulos
                 protected void Recalcular()
                 {
                         foreach (ListViewItem Itm in this.Listado.Items) {
+                                if (Itm.SubItems.Count < 6)
+                                        continue;
+
                                 Itm.UseItemStyleForSubItems = false;
-                                decimal Costo = Lfx.Types.Parsing.ParseCurrency(Itm.SubItems[1].Text);
-                                decimal Pvp = Lfx.Types.Parsing.ParseCurrency(Itm.SubItems[3].Text);
+                                decimal Costo = Lfx.Types.Parsing.ParseCurrency(Itm.SubItems[2].Text);
+                                decimal Pvp = Lfx.Types.Parsing.ParseCurrency(Itm.SubItems[4].Text);
 
                                 decimal NuevoCosto = 0m;
                                 decimal NuevoPvp = 0m;
@@ -139,20 +145,20 @@ namespace Lfc.Articulos
                                 }
 
                                 if (EntradaPrecio.TextKey == "costo") {
-                                        Itm.SubItems[4].Text = Itm.SubItems[3].Text;
-                                        Itm.SubItems[2].Text = Lfx.Types.Formatting.FormatCurrency(NuevoCosto);
-                                        Itm.SubItems[2].BackColor = System.Drawing.Color.LightGoldenrodYellow;
-                                        Itm.SubItems[4].BackColor = System.Drawing.SystemColors.Window;
+                                        Itm.SubItems[5].Text = Itm.SubItems[4].Text;
+                                        Itm.SubItems[3].Text = Lfx.Types.Formatting.FormatCurrency(NuevoCosto);
+                                        Itm.SubItems[3].BackColor = System.Drawing.Color.LightGoldenrodYellow;
+                                        Itm.SubItems[5].BackColor = System.Drawing.SystemColors.Window;
                                 } else if (EntradaPrecio.TextKey == "pvp") {
-                                        Itm.SubItems[2].Text = Itm.SubItems[1].Text;
-                                        Itm.SubItems[4].Text = Lfx.Types.Formatting.FormatCurrency(NuevoPvp);
-                                        Itm.SubItems[2].BackColor = System.Drawing.SystemColors.Window;
-                                        Itm.SubItems[4].BackColor = System.Drawing.Color.LightGoldenrodYellow;
+                                        Itm.SubItems[3].Text = Itm.SubItems[2].Text;
+                                        Itm.SubItems[5].Text = Lfx.Types.Formatting.FormatCurrency(NuevoPvp);
+                                        Itm.SubItems[3].BackColor = System.Drawing.SystemColors.Window;
+                                        Itm.SubItems[5].BackColor = System.Drawing.Color.LightGoldenrodYellow;
                                 } else {
-                                        Itm.SubItems[2].Text = Lfx.Types.Formatting.FormatCurrency(NuevoCosto);
-                                        Itm.SubItems[4].Text = Lfx.Types.Formatting.FormatCurrency(NuevoPvp);
-                                        Itm.SubItems[2].BackColor = System.Drawing.Color.LightGoldenrodYellow;
-                                        Itm.SubItems[4].BackColor = System.Drawing.Color.LightGoldenrodYellow;
+                                        Itm.SubItems[3].Text = Lfx.Types.Formatting.FormatCurrency(NuevoCosto);
+                                        Itm.SubItems[5].Text = Lfx.Types.Formatting.FormatCurrency(NuevoPvp);
+                                        Itm.SubItems[3].BackColor = System.Drawing.Color.LightGoldenrodYellow;
+                                        Itm.SubItems[5].BackColor = System.Drawing.Color.LightGoldenrodYellow;
                                 }
                         }
                 }

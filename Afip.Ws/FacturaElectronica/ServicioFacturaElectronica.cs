@@ -173,6 +173,28 @@ namespace Afip.Ws.FacturaElectronica
                 }
 
                 /// <summary>
+                /// Devuelve el porcentaje nominal correspondiente a un código de alícuota de AFIP.
+                /// </summary>
+                public static decimal ObtenerPorcentajeAlicuota(Tablas.Alicuotas alicuota)
+                {
+                        switch (alicuota) {
+                                case Tablas.Alicuotas.Iva21:
+                                        return 21.0m;
+                                case Tablas.Alicuotas.Iva10_5:
+                                        return 10.5m;
+                                case Tablas.Alicuotas.Iva27:
+                                        return 27.0m;
+                                case Tablas.Alicuotas.Iva5:
+                                        return 5.0m;
+                                case Tablas.Alicuotas.Iva2_5:
+                                        return 2.5m;
+                                case Tablas.Alicuotas.Iva0:
+                                default:
+                                        return 0.0m;
+                        }
+                }
+
+                /// <summary>
                 /// Solicitar un CAE para uno o más comprobantes.
                 /// </summary>
                 /// <param name="solCae">Los datos para la solicitud del CAE.</param>
@@ -185,6 +207,47 @@ namespace Afip.Ws.FacturaElectronica
 
                                 var i = 0;
                                 foreach (ComprobanteSolicitud Comprob in solCae.Comprobantes) {
+                                        decimal impTotConc = Math.Round(Comprob.ImporteNetoNoGravado, 2, MidpointRounding.AwayFromZero);
+                                        decimal impOpEx = Math.Round(Comprob.ImporteExento, 2, MidpointRounding.AwayFromZero);
+                                        decimal impTrib = Math.Round(Comprob.ImporteTributos, 2, MidpointRounding.AwayFromZero);
+
+                                        AlicIva[] alicIvas = null;
+                                        decimal impNeto = 0m;
+                                        decimal impIva = 0m;
+
+                                        // Agregar la tabla de alícuotas
+                                        if (Comprob.ImportesAlicuotas != null && Comprob.ImportesAlicuotas.Count > 0) {
+                                                alicIvas = new AlicIva[Comprob.ImportesAlicuotas.Count];
+                                                var j = 0;
+                                                foreach (ImporteAlicuota Alic in Comprob.ImportesAlicuotas) {
+                                                        decimal baseImp = Math.Round(Alic.BaseImponible, 2, MidpointRounding.AwayFromZero);
+                                                        decimal importeAlic = Math.Round(Alic.Importe, 2, MidpointRounding.AwayFromZero);
+
+                                                        // Validar y asegurar tolerancia de AFIP (+/- 0.01) para la alícuota
+                                                        decimal pct = ObtenerPorcentajeAlicuota(Alic.Alicuota);
+                                                        decimal ivaTeorico = Math.Round(baseImp * pct / 100m, 2, MidpointRounding.AwayFromZero);
+                                                        if (Math.Abs(importeAlic - ivaTeorico) > 0.01m) {
+                                                                importeAlic = ivaTeorico;
+                                                        }
+
+                                                        alicIvas[j++] = new AlicIva
+                                                        {
+                                                                Id = (int)Alic.Alicuota,
+                                                                BaseImp = decimal.ToDouble(baseImp),
+                                                                Importe = decimal.ToDouble(importeAlic)
+                                                        };
+
+                                                        impNeto += baseImp;
+                                                        impIva += importeAlic;
+                                                }
+                                        } else {
+                                                // Comprobantes sin discriminación de alícuotas (por ej. Factura C)
+                                                impNeto = Math.Round(Comprob.ImporteNetoGravado, 2, MidpointRounding.AwayFromZero);
+                                                impIva = 0m;
+                                        }
+
+                                        decimal impTotal = impNeto + impTotConc + impOpEx + impIva + impTrib;
+
                                         var DetalleComprobante = new FECAEDetRequest
                                         {
                                                 Concepto = (int)Comprob.Conceptos,
@@ -193,17 +256,18 @@ namespace Afip.Ws.FacturaElectronica
                                                 CbteDesde = Comprob.Numero,
                                                 CbteHasta = Comprob.Numero,
                                                 CbteFch = DateTime.Now.ToString("yyyyMMdd"),
-                                                ImpTotal = Math.Round(decimal.ToDouble(Comprob.ImporteTotal()), 2),
-                                                ImpTotConc = Math.Round(decimal.ToDouble(Comprob.ImporteNetoNoGravado), 2),
-                                                ImpNeto = Math.Round(decimal.ToDouble(Comprob.ImporteNetoGravado), 2),
-                                                ImpOpEx = Math.Round(decimal.ToDouble(Comprob.ImporteExento), 2),
-                                                ImpIVA = Math.Round(decimal.ToDouble(Comprob.ImporteIva()), 2),
-                                                //ImpTrib = Comprob.TotalTributos(),
+                                                ImpTotal = decimal.ToDouble(impTotal),
+                                                ImpTotConc = decimal.ToDouble(impTotConc),
+                                                ImpNeto = decimal.ToDouble(impNeto),
+                                                ImpOpEx = decimal.ToDouble(impOpEx),
+                                                ImpIVA = decimal.ToDouble(impIva),
+                                                ImpTrib = decimal.ToDouble(impTrib),
                                                 MonId = "PES",
                                                 MonCotiz = 1,
                                                 CondicionIVAReceptorId = Comprob.Cliente != null && Comprob.Cliente.CondicionIvaReceptorId > 0
                                                         ? Comprob.Cliente.CondicionIvaReceptorId
                                                         : 5,
+                                                Iva = alicIvas,
                                         };
 
                                         // Agregar comprobantes asociados
@@ -225,25 +289,19 @@ namespace Afip.Ws.FacturaElectronica
                                                 DetalleComprobante.CbtesAsoc = CbtesAsocList.ToArray();
                                         }
 
-                                        // Si es un comprobante con servicios, agregar los campos obligatorios
-                                        if ((Comprob.Conceptos | Tablas.Conceptos.Servicios) == Tablas.Conceptos.Servicios) {
-                                                DetalleComprobante.FchServDesde = Comprob.ServicioFechaDesde.ToString("yyyyMMdd");
-                                                DetalleComprobante.FchServHasta = Comprob.ServicioFechaHasta.ToString("yyyyMMdd");
-                                                DetalleComprobante.FchVtoPago = Comprob.FechaVencimientoPago.ToString("yyyyMMdd");
-                                        }
+                                        // Si es un comprobante con servicios (Concepto 2 o 3), agregar los campos obligatorios
+                                        if ((Comprob.Conceptos & Tablas.Conceptos.Servicios) == Tablas.Conceptos.Servicios) {
+                                                DateTime fchDesde = Comprob.ServicioFechaDesde > DateTime.MinValue ? Comprob.ServicioFechaDesde : DateTime.Today;
+                                                DateTime fchHasta = Comprob.ServicioFechaHasta > DateTime.MinValue ? Comprob.ServicioFechaHasta : DateTime.Today;
+                                                DateTime fchVto = Comprob.FechaVencimientoPago > DateTime.MinValue ? Comprob.FechaVencimientoPago : DateTime.Today;
 
-                                        // Agregar la tabla de alícuotas
-                                        if (Comprob.ImportesAlicuotas != null && Comprob.ImportesAlicuotas.Count > 0) {
-                                                DetalleComprobante.Iva = new AlicIva[Comprob.ImportesAlicuotas.Count];
-                                                var j = 0;
-                                                foreach (ImporteAlicuota Alic in Comprob.ImportesAlicuotas) {
-                                                        DetalleComprobante.Iva[j++] = new AlicIva
-                                                        {
-                                                                Id = (int)Alic.Alicuota,
-                                                                BaseImp = Math.Round(decimal.ToDouble(Alic.BaseImponible), 2),
-                                                                Importe = Math.Round(decimal.ToDouble(Alic.Importe), 2)
-                                                        };
+                                                if (fchHasta < fchDesde) {
+                                                        fchHasta = fchDesde;
                                                 }
+
+                                                DetalleComprobante.FchServDesde = fchDesde.ToString("yyyyMMdd");
+                                                DetalleComprobante.FchServHasta = fchHasta.ToString("yyyyMMdd");
+                                                DetalleComprobante.FchVtoPago = fchVto.ToString("yyyyMMdd");
                                         }
 
                                         DetallesComprobantes[i++] = DetalleComprobante;
