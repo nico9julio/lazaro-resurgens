@@ -641,19 +641,14 @@ namespace Lcc.Entrada.Articulos
                                 return;
 
                         if (this.Connection != null) {
-                                m_Recalculando = true;
-                                try {
-                                        decimal ValorAnterior = EntradaImporte.ValueDecimal;
-                                        this.RecalcularImporteFinal();
-                                        this.VerificarStock();
-                                        if (EntradaImporte.ValueDecimal != ValorAnterior) {
-                                                this.Changed = true;
-                                                if (null != ImportesChanged) {
-                                                        ImportesChanged(this, null);
-                                                }
+                                decimal ValorAnterior = EntradaImporte.ValueDecimal;
+                                this.RecalcularImporteFinal();
+                                this.VerificarStock();
+                                if (EntradaImporte.ValueDecimal != ValorAnterior || sender == EntradaUnitario || sender == EntradaCantidad || sender == EntradaDescuento || sender == EntradaIva) {
+                                        this.Changed = true;
+                                        if (null != ImportesChanged) {
+                                                ImportesChanged(this, null);
                                         }
-                                } finally {
-                                        m_Recalculando = false;
                                 }
                         }
                 }
