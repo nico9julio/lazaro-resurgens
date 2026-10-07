@@ -11,9 +11,9 @@ using System.Security.Permissions;
 
 [assembly: AssemblyTitle("Afip.Ws")]
 [assembly: AssemblyDescription("Cliente de servicios web de AFIP")]
-[assembly: AssemblyVersion("2.0.9779.0")]
-[assembly: AssemblyFileVersion("2.0.9779.0")]
-[assembly: AssemblyInformationalVersion("2.0.9779")]
+[assembly: AssemblyVersion("2.0.9780.0")]
+[assembly: AssemblyFileVersion("2.0.9780.0")]
+[assembly: AssemblyInformationalVersion("2.0.9780")]
 [assembly: AssemblyCompany("Ernesto Nicolás Carrea")]
 [assembly: AssemblyProduct("Lázaro")]
 [assembly: AssemblyCopyright("Copyright 2004-2017 Ernesto Nicolás Carrea y colaboradores")]

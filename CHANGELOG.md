@@ -4,6 +4,18 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.9780] - 2026-10-07
+
+### Added
+- **Monotributo — Widget de Facturación, Proyección de Recategorización y Sincronización con ARCA:**
+  - **Widget en Barra Inferior:** Indicador informativo en la barra de estado inferior que se activa automáticamente cuando la empresa configurada tiene la Condición IVA *Responsable Monotributista* (código `4`).
+  - **Monitoreo y Métricas en Tiempo Real:** Visualización en vivo del total facturado en el mes en curso (MTD), total del mes anterior, acumulado móvil de los últimos 12 meses y cálculo de facturación proyectada anualizada para la próxima recategorización semestral según el calendario oficial de ARCA (períodos de recategorización de enero y julio).
+  - **Badge de Categoría con Progreso Visual:** Indicador estilizado que muestra la categoría actual y proyectada con relleno porcentual progresivo sobre el tramo de facturación consumido, cálculo de monto restante para el tope de la categoría o siguiente categoría, advertencia cromática (alerta naranja en Cat. K y roja ante riesgo de exclusión hacia el Régimen General).
+  - **Personalización de Métricas:** Menú contextual accesible mediante clic derecho sobre el widget que permite al usuario seleccionar qué métricas desea visualizar u ocultar en la barra inferior (mes actual, mes anterior, acumulado 12 meses, facturación proyectada).
+  - **Ventana de Detalle y Proyección:** Modal accesible con doble clic en el widget o clic en el badge, que detalla tarjetas resumen de estado, proyección semestral/anual, historial mes a mes con desglose de comprobantes y grilla completa de escalas oficiales de ARCA con topes y cuotas.
+  - **Integración con Tax API de Servidos Developers (servidos.ar):** Asistente para configurar API Key gratuita o personalizada y descargar en un clic las escalas oficiales vigentes publicadas por ARCA, con soporte para actividades de servicios y comercio.
+  - **Formateo Monetario Unificado:** Representación de todos los importes del control de monotributo en formato moneda sin centavos con punto para separación de miles (ej. `$ 1.234.568`).
+
 ## [2.0.9779] - 2026-10-07
 
 ### Fixed
