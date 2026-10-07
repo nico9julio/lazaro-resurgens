@@ -6,7 +6,7 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
-## [Unreleased] - 2026-10-06
+## [2.0.9775] - 2026-10-06
 
 ### Added
 - **Adecuación RG 5.616 (AFIP / ARCA WSFEv1):**

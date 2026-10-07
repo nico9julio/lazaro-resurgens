@@ -9,12 +9,14 @@ using System.Security.Permissions;
 
 #endregion
 
-[assembly: AssemblyTitle("Lázaro")]
-[assembly: AssemblyVersion("2.0.*")]
-[assembly: AssemblyDescription("Sistema de gestión comercial Lázaro")]
-[assembly: AssemblyCompany("Ernesto Nicolás Carrea")]
-[assembly: AssemblyProduct("Lázaro")]
-[assembly: AssemblyCopyright("Copyright 2004-2017 Ernesto Nicolás Carrea y colaboradores")]
+[assembly: AssemblyTitle("Lázaro Resurgens")]
+[assembly: AssemblyVersion("2.0.9775.0")]
+[assembly: AssemblyFileVersion("2.0.9775.0")]
+[assembly: AssemblyInformationalVersion("2.0.9775")]
+[assembly: AssemblyDescription("Sistema de gestión comercial Lázaro Resurgens")]
+[assembly: AssemblyCompany("Ernesto Nicolás Carrea, Nicolás Secreto")]
+[assembly: AssemblyProduct("Lázaro Resurgens")]
+[assembly: AssemblyCopyright("Copyright 2004-2026 Ernesto Nicolás Carrea, Nicolás Secreto y colaboradores")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 [assembly: CLSCompliant(true)]
