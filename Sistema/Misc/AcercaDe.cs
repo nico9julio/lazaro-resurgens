@@ -15,8 +15,8 @@ namespace Lazaro.WinMain.Misc
         
         private void FormAcercaDe_Load(object sender, System.EventArgs e)
                 {
-                        label1.Text = "Resurgens v2.0.9777";
-                        this.Text = "Acerca de Lázaro Resurgens v2.0.9777";
+                        label1.Text = "Resurgens v2.0.9778";
+                        this.Text = "Acerca de Lázaro Resurgens v2.0.9778";
                         ListaComponentes.BackColor = this.BackColor;
 
                         EtiquetaUsuario.Text = Lbl.Sys.Config.Actual.UsuarioConectado.Id.ToString() + " (" + Lbl.Sys.Config.Actual.UsuarioConectado.Persona.Nombre + ") / " + System.Environment.MachineName;

@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 #endregion
 
 [assembly: AssemblyTitle("Lázaro Business Logic Core")]
-[assembly: AssemblyVersion("2.0.9777.0")]
-[assembly: AssemblyFileVersion("2.0.9777.0")]
-[assembly: AssemblyInformationalVersion("2.0.9777")]
+[assembly: AssemblyVersion("2.0.9778.0")]
+[assembly: AssemblyFileVersion("2.0.9778.0")]
+[assembly: AssemblyInformationalVersion("2.0.9778")]
 [assembly: AssemblyDescription("Lázaro Business Logic Core versión 1.0")]
 [assembly: AssemblyCompany("Ernesto Nicolás Carrea")]
 [assembly: AssemblyProduct("Lázaro")]

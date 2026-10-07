@@ -4,6 +4,21 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.9778] - 2026-10-07
+
+### Fixed
+- **Comprobantes de Compra — Corrección de Recursión Infinita al Crear:**
+  - **Problema corregido:** Al intentar abrir una nueva factura de compra (*Comprobantes -> Compras -> Nueva factura de compra*), el programa se cerraba abruptamente sin mostrar ningún mensaje de error. Esto ocurría porque el formulario activa la discriminación de IVA (`DiscriminarIva = true`) para compras. En el control de renglón de comprobante, el recálculo asignaba el importe de IVA unitario a `0`, lo que disparaba el evento de cambio de texto, y este a su vez volvía a invocar el recálculo sin validar cambios ni contar con guarda de reentrancia, produciendo un desbordamiento de pila (`StackOverflowException`).
+  - **Solución e implicancia:** Se implementó una bandera de guarda de reentrancia (`m_Recalculando`) y validaciones de desigualdad antes de asignar importes y emitir eventos. La creación de facturas de compra y cualquier comprobante que discrimine IVA carga e interactúa de manera completamente estable.
+
+- **Listados con Filtros por Subcomando — Despachador de Menú:**
+  - **Problema corregido:** En opciones como *Comprobantes -> Compras -> Listado de facturas de compra* (comando `LISTAR Lbl.Comprobantes.ComprobanteDeCompra FP`), o listados filtrados por letra de factura (`FA`, `FB`) o tipo de pedido (`NP`, `PD`, `RP`), la grilla se abría completamente vacía sin registros. El despachador `ExecListar` pasaba por error el nombre de la clase LBL en lugar del filtro extraído (`comando`).
+  - **Solución e implicancia:** Se corrigió el argumento pasado a `InstanciarFormularioListado`, aplicando correctamente los filtros de compra (`FP`, `NP`, `PD`, `RP`), facturas (`A`, `B`) y artículos a pedir/pedidos.
+
+- **Pruebas Unitarias — Compatibilidad con NUnit 4 (ClassicAssert):**
+  - **Problema corregido:** La compilación de la solución completa arrojaba 68 errores en el proyecto `Lbl.Test` debido al cambio de API introducido en NUnit 4.
+  - **Solución e implicancia:** Se migraron las aserciones a `NUnit.Framework.Legacy.ClassicAssert`, permitiendo compilar la solución entera (`Lazaro.sln`) con cero errores.
+
 ## [2.0.9777] - 2026-10-07
 
 ### Fixed
