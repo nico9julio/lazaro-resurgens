@@ -6,6 +6,28 @@ El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/
 
 ---
 
+## [2.0.9776] - 2026-10-06
+
+### Fixed
+- **Facturación Multimoneda y Validación AFIP WSFE:**
+  - Conversión precisa de artículos expresados en moneda extranjera (USD) a pesos argentinos (ARS) en la emisión de comprobantes fiscales electrónicos.
+  - Reemplazo de truncamiento (`Currency.Truncate`) por redondeo simétrico (`MidpointRounding.AwayFromZero`) en totales, PVP, costos, líneas de detalle y alícuotas, eliminando discrepancias por centavos.
+  - Proporcionalidad exacta en bases imponibles e importes de IVA aplicando el factor de descuento global del comprobante.
+  - Reconciliación matemática en `ServicioFacturaElectronica`: derivación directa de `ImpNeto`, `ImpIVA` e `ImpTotal` a partir de las alícuotas validadas (`AlicIva[]`), garantizando estricta concordancia con la tolerancia oficial de AFIP (+/- 0.01) y eliminando los errores 10014, 10015 y 10016.
+  - Corrección de doble conversión de moneda en artículos tipo receta (`EsReceta`).
+- **Comprobantes Mixtos con Servicios (Concepto 3 AFIP):**
+  - Corrección del operador de bits (`&` en lugar de `|`) en `ClienteAfipWsfe` y `ServicioFacturaElectronica`, permitiendo que facturas con productos y servicios reconozcan y envíen las fechas obligatorias.
+  - Agregado del valor `ProductosYServicios = 3` al enumerador `Conceptos`.
+  - Búsqueda específica de renglones de servicio para cálculo de periodicidad y corrección de operaciones inmutables en `DateTime`.
+  - Fallback automático a la fecha actual para `FchServDesde`, `FchServHasta` y `FchVtoPago`, evitando el error de AFIP "El campo fecha desde y hasta no está especificado".
+  - Asignación por defecto de Concepto 1 (Productos) en comprobantes compuestos exclusivamente por ítems con texto libre (`*`).
+- **Modificador Masivo de Precios (`CambioMasivoPrecios`):**
+  - Corrección de índices de columnas en el listado de artículos y en la grilla de actualización masiva.
+  - Soporte multimoneda en la modificación de precios, respetando la moneda de origen de cada artículo y aplicando la cotización adecuada.
+- **Generador de Facturas en PDF (`GeneradorPdf`):**
+  - Precios unitarios formateados con 2 decimales finales.
+  - En Facturas B y C, el subtotal se presenta con IVA incluido para concordancia visual con la suma de los renglones, ocultando alícuotas en cero sin valor fiscal.
+
 ## [2.0.9775] - 2026-10-06
 
 ### Added
