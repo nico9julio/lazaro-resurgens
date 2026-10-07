@@ -10,9 +10,9 @@ using System.Security.Permissions;
 #endregion
 
 [assembly: AssemblyTitle("Lázaro Resurgens")]
-[assembly: AssemblyVersion("2.0.9778.0")]
-[assembly: AssemblyFileVersion("2.0.9778.0")]
-[assembly: AssemblyInformationalVersion("2.0.9778")]
+[assembly: AssemblyVersion("2.0.9779.0")]
+[assembly: AssemblyFileVersion("2.0.9779.0")]
+[assembly: AssemblyInformationalVersion("2.0.9779")]
 [assembly: AssemblyDescription("Sistema de gestión comercial Lázaro Resurgens")]
 [assembly: AssemblyCompany("Ernesto Nicolás Carrea, Nicolás Secreto")]
 [assembly: AssemblyProduct("Lázaro Resurgens")]

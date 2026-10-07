@@ -4,6 +4,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.9779] - 2026-10-07
+
+### Fixed
+- **Detalle de Comprobantes — Recálculo Inmediato ante Modificación Manual de Precios y Cantidades:**
+  - **Problema corregido:** Al editar manualmente el precio unitario, la cantidad o el porcentaje de descuento en un renglón de comprobante (o al ingresar ítems manuales libres que comienzan con asterisco `*`), el campo "Importe" del renglón quedaba congelado en su valor anterior (en $0,00 o en el PVP de base de datos). Como consecuencia directa, el evento `ImportesChanged` no se propagaba a la grilla y los campos Subtotal y Total del formulario no reflejaban las modificaciones manuales introducidas por el usuario.
+  - **Causa raíz:** En la versión 2.0.9778, la bandera de control de reentrancia (`m_Recalculando`) se activaba en `EntradaUnitarioIvaDescuentoCantidad_TextChanged` antes de invocar `RecalcularImporteFinal()`, provocando que dicho método abortara en su primera línea y nunca calculara el importe final ni disparara la actualización de totales del formulario.
+  - **Solución e implicancia:** Se reubicó la activación de la guarda `m_Recalculando` exclusivamente en el cuerpo de `RecalcularImporteFinal()`. La edición de precios manuales, cantidades, descuentos/recargos y artículos libres con asterisco (`*`) recalcula en tiempo real el importe del renglón y actualiza de inmediato el Subtotal y el Total general del comprobante, manteniendo al mismo tiempo la prevención contra desbordamiento de pila (`StackOverflowException`) en comprobantes de compra.
+
 ## [2.0.9778] - 2026-10-07
 
 ### Fixed
