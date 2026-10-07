@@ -264,6 +264,10 @@ namespace Lazaro.WinMain.Config
                         Trans.Commit();
                         Trans.Dispose();
 
+                        if (Aplicacion.FormularioPrincipal != null) {
+                                Aplicacion.FormularioPrincipal.ActualizarVisibilidadMonotributo();
+                        }
+
                         return false;
                 }
 

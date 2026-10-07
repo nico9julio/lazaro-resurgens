@@ -15,12 +15,21 @@ namespace Lazaro.WinMain.Principal
                 private string TablaActual, TablaSolicitada;
                 private Lbl.IElementoDeDatos ElementoActual = null;
 
+                private int m_TicksContador = 0;
+
                 public BarraInferior()
                 {
                         InitializeComponent();
                         this.BackColor = this.DisplayStyle.BackgroundColor;
 
+                        if (this.WidgetMonotributo != null)
+                        {
+                                this.WidgetMonotributo.SolicitudReajusteLayout += (s, e) => AjustarLayout();
+                        }
+                        this.Resize += (s, e) => AjustarLayout();
+
                         TimerReloj_Tick(this, null);
+                        ActualizarVisibilidadMonotributo();
                 }
 
                 [EditorBrowsable(EditorBrowsableState.Never), Browsable(false), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -47,6 +56,53 @@ namespace Lazaro.WinMain.Principal
                 {
                         RelojHora.Text = System.DateTime.Now.ToString("HH:mm");
                         RelojFecha.Text = System.DateTime.Now.ToString("dd/MM/yy");
+
+                        m_TicksContador++;
+                        if (m_TicksContador % 300 == 0 && WidgetMonotributo != null && WidgetMonotributo.Visible)
+                        {
+                                WidgetMonotributo.IniciarCargaDatos();
+                        }
+                }
+
+                public void AjustarLayout()
+                {
+                        if (this.DesignMode) return;
+
+                        int limiteDerecho = PanelReloj.Left;
+                        if (WidgetMonotributo != null && WidgetMonotributo.Visible)
+                        {
+                                WidgetMonotributo.Location = new System.Drawing.Point(limiteDerecho - WidgetMonotributo.Width - 4, 2);
+                                WidgetMonotributo.Height = Math.Max(20, this.ClientSize.Height - 4);
+                                limiteDerecho = WidgetMonotributo.Left;
+                        }
+
+                        int anchoInfo = Math.Max(20, limiteDerecho - 4);
+                        if (PanelAyuda != null) PanelAyuda.Width = anchoInfo;
+                        if (PanelArticulo != null) PanelArticulo.Width = anchoInfo;
+                        if (PanelPersona != null) PanelPersona.Width = anchoInfo;
+                        if (PanelProgreso != null) PanelProgreso.Width = anchoInfo;
+                }
+
+                public void ActualizarVisibilidadMonotributo()
+                {
+                        try
+                        {
+                                bool esMonotributo = (Lbl.Sys.Config.Empresa.SituacionTributaria == (int)Lbl.Impuestos.CondicionesFrenteAlIva.ResponsableMonotributista);
+                                if (WidgetMonotributo != null)
+                                {
+                                        WidgetMonotributo.Visible = esMonotributo;
+                                        if (esMonotributo)
+                                        {
+                                                WidgetMonotributo.IniciarCargaDatos();
+                                        }
+                                }
+                        }
+                        catch
+                        {
+                                if (WidgetMonotributo != null)
+                                        WidgetMonotributo.Visible = false;
+                        }
+                        AjustarLayout();
                 }
 
                 private void TimerSlowLink_Tick(object sender, EventArgs e)

@@ -227,6 +227,13 @@
     <Compile Include="Impresion\TipoPlantilla.cs" />
     <Compile Include="Impuestos\CondicionesFrenteAlIva.cs" />
     <Compile Include="Impuestos\SituacionIva.cs" />
+    <Compile Include="Impuestos\Monotributo\CategoriaMonotributo.cs" />
+    <Compile Include="Impuestos\Monotributo\EscalasMonotributo.cs" />
+    <Compile Include="Impuestos\Monotributo\PeriodoRecategorizacion.cs" />
+    <Compile Include="Impuestos\Monotributo\MesFacturacion.cs" />
+    <Compile Include="Impuestos\Monotributo\ResumenMonotributo.cs" />
+    <Compile Include="Impuestos\Monotributo\CalculadorMonotributo.cs" />
+    <Compile Include="Impuestos\Monotributo\FormatoMoneda.cs" />
     <Compile Include="ListaIds.cs" />
     <Compile Include="Notificaciones\UsuarioConectado.cs" />
     <Compile Include="Pagos\Cupon.cs" />

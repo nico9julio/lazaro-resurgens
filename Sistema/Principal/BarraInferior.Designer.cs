@@ -32,6 +32,7 @@ namespace Lazaro.WinMain.Principal
                         this.components = new System.ComponentModel.Container();
                         System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(BarraInferior));
                         this.PanelReloj = new Lui.Forms.Panel();
+                        this.WidgetMonotributo = new Lazaro.WinMain.Principal.WidgetMonotributo();
                         this.RelojFecha = new Lui.Forms.Label();
                         this.RelojHora = new Lui.Forms.Label();
                         this.PanelArticulo = new Lui.Forms.Panel();
@@ -117,9 +118,8 @@ namespace Lazaro.WinMain.Principal
                         // 
                         // PanelArticulo
                         // 
-                        this.PanelArticulo.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+                        this.PanelArticulo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
                         this.PanelArticulo.Controls.Add(this.ArticuloStock);
                         this.PanelArticulo.Controls.Add(this.label5);
                         this.PanelArticulo.Controls.Add(this.ArticuloPvp);
@@ -223,9 +223,8 @@ namespace Lazaro.WinMain.Principal
                         // 
                         // PanelAyuda
                         // 
-                        this.PanelAyuda.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+                        this.PanelAyuda.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
                         this.PanelAyuda.Controls.Add(this.pictureBox1);
                         this.PanelAyuda.Controls.Add(this.AyudaTitulo);
                         this.PanelAyuda.Controls.Add(this.AyudaTexto);
@@ -281,9 +280,8 @@ namespace Lazaro.WinMain.Principal
                         // 
                         // PanelPersona
                         // 
-                        this.PanelPersona.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+                        this.PanelPersona.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
                         this.PanelPersona.Controls.Add(this.PersonaNombre);
                         this.PanelPersona.Controls.Add(this.PersonaImagen);
                         this.PanelPersona.Controls.Add(this.EnlaceComentarios);
@@ -454,9 +452,8 @@ namespace Lazaro.WinMain.Principal
                         // 
                         // PanelProgreso
                         // 
-                        this.PanelProgreso.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+                        this.PanelProgreso.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
                         this.PanelProgreso.Controls.Add(this.pictureBox2);
                         this.PanelProgreso.Controls.Add(this.EtiquetaDescripcion);
                         this.PanelProgreso.Controls.Add(this.ProgressBar);
@@ -503,6 +500,7 @@ namespace Lazaro.WinMain.Principal
                         // BarraInferior
                         // 
                         this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Inherit;
+                        this.Controls.Add(this.WidgetMonotributo);
                         this.Controls.Add(this.PanelProgreso);
                         this.Controls.Add(this.PanelReloj);
                         this.Controls.Add(this.PanelArticulo);
@@ -561,5 +559,6 @@ namespace Lazaro.WinMain.Principal
                 private System.Windows.Forms.PictureBox pictureBox2;
                 private Lui.Forms.Label EtiquetaOperacion;
                 private Lui.Forms.Label EtiquetaDescripcion;
+                public Lazaro.WinMain.Principal.WidgetMonotributo WidgetMonotributo;
         }
 }
