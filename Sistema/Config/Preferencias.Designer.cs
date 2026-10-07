@@ -107,6 +107,8 @@ namespace Lazaro.WinMain.Config
                         this.label13 = new Lui.Forms.Label();
                         this.EntradaPVR = new Lui.Forms.TextBox();
                         this.label12 = new Lui.Forms.Label();
+                        this.CheckAfipHomologacion = new Lui.Forms.CheckBox();
+                        this.LabelAfipHomoAviso = new Lui.Forms.Label();
                         this.FrmAvanzado = new Lui.Forms.Frame();
                         this.buttonPanel1 = new Lui.Forms.ButtonPanel();
                         this.LabelTab1 = new Lui.Forms.Label();
@@ -1020,6 +1022,8 @@ namespace Lazaro.WinMain.Config
                         this.panel2.Controls.Add(this.Label4);
                         this.panel2.Controls.Add(this.EntradaFormaPagoPredet);
                         this.panel2.Controls.Add(this.Label15);
+                        this.panel2.Controls.Add(this.CheckAfipHomologacion);
+                        this.panel2.Controls.Add(this.LabelAfipHomoAviso);
                         this.panel2.Location = new System.Drawing.Point(0, 37);
                         this.panel2.Name = "panel2";
                         this.panel2.Size = new System.Drawing.Size(611, 398);
@@ -1105,6 +1109,27 @@ namespace Lazaro.WinMain.Config
                         this.label12.TabIndex = 15;
                         this.label12.Text = "PV para remitos";
                         this.label12.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+                        // 
+                        // CheckAfipHomologacion
+                        // 
+                        this.CheckAfipHomologacion.AutoSize = true;
+                        this.CheckAfipHomologacion.Location = new System.Drawing.Point(4, 320);
+                        this.CheckAfipHomologacion.Name = "CheckAfipHomologacion";
+                        this.CheckAfipHomologacion.Size = new System.Drawing.Size(325, 24);
+                        this.CheckAfipHomologacion.TabIndex = 24;
+                        this.CheckAfipHomologacion.Text = "Operar en entorno de Homologación (AFIP / Pruebas)";
+                        this.CheckAfipHomologacion.UseVisualStyleBackColor = true;
+                        this.CheckAfipHomologacion.CheckedChanged += new System.EventHandler(this.CheckAfipHomologacion_CheckedChanged);
+                        // 
+                        // LabelAfipHomoAviso
+                        // 
+                        this.LabelAfipHomoAviso.Location = new System.Drawing.Point(22, 344);
+                        this.LabelAfipHomoAviso.Name = "LabelAfipHomoAviso";
+                        this.LabelAfipHomoAviso.Size = new System.Drawing.Size(560, 24);
+                        this.LabelAfipHomoAviso.TabIndex = 25;
+                        this.LabelAfipHomoAviso.Text = "(Utiliza servidores de prueba de AFIP. No genera comprobantes con validez fiscal)";
+                        this.LabelAfipHomoAviso.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+                        this.LabelAfipHomoAviso.TextStyle = Lazaro.Pres.DisplayStyles.TextStyles.Small;
                         // 
                         // FrmAvanzado
                         // 
@@ -1300,5 +1325,7 @@ namespace Lazaro.WinMain.Config
                 private Lui.Forms.Label label39;
                 private Lui.Forms.TextBox EntradaIngresosBrutos;
                 private Lui.Forms.Label label38;
+                private Lui.Forms.CheckBox CheckAfipHomologacion;
+                private Lui.Forms.Label LabelAfipHomoAviso;
         }
 }

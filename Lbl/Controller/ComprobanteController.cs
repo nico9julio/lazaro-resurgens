@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -184,10 +184,56 @@ namespace Lazaro.Base.Controller
                                 return Res;
                         }
 
+                        bool esHomo = this.EsHomologacionAfip();
+
                         var TipoComprob = Afip.Ws.FacturaElectronica.Tablas.ComprobantesTiposPorLetra[comprobante.Tipo.Nomenclatura];
                         var UltimoComprob = CliFe.UltimoComprobante(comprobante.PV, TipoComprob);
 
                         int ProximoNumero = UltimoComprob.CbteNro + 1;
+
+                        // Salvaguardas de seguridad en Modo Homologación
+                        if (esHomo) {
+                                // 1. Detección de Colisión Numérica Inminente en la base de datos local
+                                string sqlColision = string.Format(
+                                        "SELECT COUNT(*) FROM comprob WHERE pv = {0} AND tipo_fac = '{1}' AND numero = {2} AND id_comprob != {3}",
+                                        comprobante.PV,
+                                        comprobante.Tipo.Nomenclatura,
+                                        ProximoNumero,
+                                        comprobante.Id
+                                );
+                                int colisiones = comprobante.Connection.FieldInt(sqlColision);
+                                if (colisiones > 0) {
+                                        return new Lfx.Types.FailureOperationResult(string.Format(
+                                                "BLOQUEO DE SEGURIDAD (MODO HOMOLOGACIÓN): El servidor de prueba de AFIP asignará el comprobante Nº {0} al Punto de Venta {1}, " +
+                                                "pero dicho número YA EXISTE en su base de datos local para este tipo de comprobante ({2}).\n\n" +
+                                                "Para evitar sobreescritura de comprobantes reales e inconsistencias en la numeración, utilice un Punto de Venta exclusivo de pruebas (ej: PV 99) " +
+                                                "o trabaje sobre una base de datos de pruebas/clon.",
+                                                ProximoNumero, comprobante.PV, comprobante.Tipo.Nomenclatura
+                                        ));
+                                }
+
+                                // 2. Advertencia si el Punto de Venta posee historial productivo real previo
+                                string sqlHistorialProd = string.Format(
+                                        "SELECT COUNT(*) FROM comprob WHERE pv = {0} AND cae_numero IS NOT NULL AND cae_numero != '' AND (obs IS NULL OR obs NOT LIKE '%HOMOLOGACIÓN%')",
+                                        comprobante.PV
+                                );
+                                int cantProd = comprobante.Connection.FieldInt(sqlHistorialProd);
+                                if (cantProd > 0) {
+                                        bool permitirPvProd = Environment.GetEnvironmentVariable("LAZARO_PERMITIR_HOMO_PV_PROD") == "1"
+                                                || Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("AFIP.Homologacion.PermitirPvProd", "0") == "1";
+
+                                        if (!permitirPvProd) {
+                                                return new Lfx.Types.FailureOperationResult(string.Format(
+                                                        "ADVERTENCIA DE SEGURIDAD (MODO HOMOLOGACIÓN): El Punto de Venta {0} posee {1} comprobante(s) emitidos previamente en Producción.\n\n" +
+                                                        "Emitir en Homologación sobre un Punto de Venta productivo puede alterar la correlatividad de la empresa.\n\n" +
+                                                        "Recomendaciones:\n" +
+                                                        "1. Asigne a sus pruebas un Punto de Venta exclusivo (ej: PV 99).\n" +
+                                                        "2. O configure la opción 'AFIP.Homologacion.PermitirPvProd=1' si desea forzar la emisión sobre este PV.",
+                                                        comprobante.PV, cantProd
+                                                ));
+                                        }
+                                }
+                        }
 
                         var SolCae = Util.Comprobantes.ClienteAfipWsfe.CrearSolicitudCae(comprobante, ProximoNumero);
 
@@ -196,7 +242,26 @@ namespace Lazaro.Base.Controller
 
                         foreach(var Comprob in SolCae.Comprobantes) {
                                 if(Comprob.Cae != null && string.IsNullOrWhiteSpace(Comprob.Cae.CodigoCae) == false) {
+                                        // 3. Marca indeleble de Homologación en la base de datos
+                                        if (esHomo) {
+                                                string marcaHomo = "[AFIP HOMOLOGACIÓN - COMPROBANTE NO FISCAL]";
+                                                if (string.IsNullOrWhiteSpace(comprobante.Obs)) {
+                                                        comprobante.Obs = marcaHomo;
+                                                } else if (!comprobante.Obs.Contains("[AFIP HOMOLOGACIÓN")) {
+                                                        comprobante.Obs = marcaHomo + " " + comprobante.Obs;
+                                                }
+                                                comprobante.Registro["obs"] = comprobante.Obs;
+                                        }
+
                                         new Lbl.Comprobantes.Numerador(comprobante).Numerar(Comprob.Numero, Comprob.Cae.CodigoCae, Comprob.Cae.Vencimiento, true);
+
+                                        if (esHomo) {
+                                                qGen.Update updObs = new qGen.Update(comprobante.TablaDatos);
+                                                updObs.ColumnValues.AddWithValue("obs", comprobante.Obs);
+                                                updObs.WhereClause = new qGen.Where(comprobante.CampoId, comprobante.Id);
+                                                comprobante.Connection.ExecuteNonQuery(updObs);
+                                        }
+
                                         this.GenerarPdf(comprobante);
                                 }
                         }
@@ -237,21 +302,66 @@ namespace Lazaro.Base.Controller
 
 
                 /// <summary>
+                /// Determina si AFIP debe operar en entorno de homologación.
+                /// Prioridad: variable de entorno > configuración en sys_config (AFIP.Homologacion).
+                /// </summary>
+                protected bool EsHomologacionAfip()
+                {
+                        return Lbl.Sys.Config.AfipHomologacion;
+                }
+
+                /// <summary>
+                /// Resuelve la ruta del certificado .p12 para la empresa y entorno actual.
+                /// En homologación busca Certificado_homo.p12 y fallback a Certificado.p12.
+                /// En producción busca Certificado_prod.p12 y fallback a Certificado.p12.
+                /// </summary>
+                protected string ObtenerRutaCertificadoAfip(bool esHomo)
+                {
+                        string carpetaAfip = System.IO.Path.Combine(Lbl.Sys.Config.CarpetaEmpresa, "AFIP");
+                        if (esHomo) {
+                                string certHomo = System.IO.Path.Combine(carpetaAfip, "Certificado_homo.p12");
+                                if (System.IO.File.Exists(certHomo)) {
+                                        return certHomo;
+                                }
+                        } else {
+                                string certProd = System.IO.Path.Combine(carpetaAfip, "Certificado_prod.p12");
+                                if (System.IO.File.Exists(certProd)) {
+                                        return certProd;
+                                }
+                        }
+
+                        return System.IO.Path.Combine(carpetaAfip, "Certificado.p12");
+                }
+
+                /// <summary>
+                /// Resuelve la ruta de archivo local de ticket de acceso aislada por empresa y entorno.
+                /// </summary>
+                protected string ObtenerRutaArchivoTicketAcceso(bool esHomo)
+                {
+                        string sufijo = esHomo ? "homo" : "prod";
+                        string carpetaAfip = System.IO.Path.Combine(Lbl.Sys.Config.CarpetaEmpresa, "AFIP");
+                        if (!System.IO.Directory.Exists(carpetaAfip)) {
+                                try {
+                                        Lfx.Environment.Folders.EnsurePathExists(carpetaAfip);
+                                } catch { }
+                        }
+                        return System.IO.Path.Combine(carpetaAfip, string.Format("ticketacceso_{0}.dat", sufijo));
+                }
+
+                /// <summary>
                 /// Prepara el cliente de WS de AFIP, prueba el estado de los servicios y obtiene un ticket de acceso.
                 /// </summary>
                 /// <returns>SuccessOperationResult si todo salió bien.</returns>
                 protected Lfx.Types.OperationResult IniciarWsAfip()
                 {
+                        bool esHomologacion = this.EsHomologacionAfip();
+
                         // Inicio un cliente si es necesario
                         if (CliFe == null) {
                                 CliFe = new Afip.Ws.FacturaElectronica.ServicioFacturaElectronica();
                         }
 
-                        // Pruebo el estado de los servicios web
-                        /* var Estado = CliFe.ProbarEstadoServicios();
-                        if (Estado == false) {
-                                return new Lfx.Types.FailureOperationResult("Los servicios web de AFIP no están funcionando");
-                        } */
+                        CliFe.Homologacion = esHomologacion;
 
                         // Si no estoy autenticado o la autenticación está vencida, pido un TA
                         if (CliFe.TieneTicketDeAccesoValido() == false) {
@@ -269,23 +379,37 @@ namespace Lazaro.Base.Controller
                 }
 
                 /// <summary>
-                /// Guarda un ticket de acceso en la base de datos, para reusarlo mientras sea válido.
+                /// Guarda un ticket de acceso en la carpeta de la empresa y en la base de datos, para reusarlo mientras sea válido.
                 /// </summary>
-                protected void GuardarTicketDeAcceso(Afip.Ws.Autenticacion.TicketAcceso ta)
+                protected void GuardarTicketDeAcceso(Afip.Ws.Autenticacion.TicketAcceso ta, bool esHomo, string cuit)
                 {
                         try {
-                                // Generar una cadena con el TA
-                                var CadenaTa = ta.Token + "|lazaro_separador|" + ta.Sign + "|lazaro_separador|" + Lfx.Types.Formatting.FormatDateTimeSql(ta.GenerationTime) + "|lazaro_separador|" + Lfx.Types.Formatting.FormatDateTimeSql(ta.ExpirationTime);
+                                string cuitLimpio = cuit != null ? cuit.Replace("-", "").Replace(" ", "").Replace(".", "").Trim() : "";
+                                // Generar una cadena con el TA (incluye el CUIT como 5to token para evitar colisiones multi-instancia)
+                                var CadenaTa = ta.Token + "|lazaro_separador|" + ta.Sign + "|lazaro_separador|" + Lfx.Types.Formatting.FormatDateTimeSql(ta.GenerationTime) + "|lazaro_separador|" + Lfx.Types.Formatting.FormatDateTimeSql(ta.ExpirationTime) + "|lazaro_separador|" + cuitLimpio;
 
-                                // Escribirlo en un archivo en el disco
-                                var RutaTa = System.IO.Path.Combine(Lfx.Environment.Folders.TemporaryFolder, "ticketacceso.dat");
+                                // Escribirlo en un archivo en el disco en la carpeta de la empresa
+                                var RutaTa = this.ObtenerRutaArchivoTicketAcceso(esHomo);
                                 System.IO.File.WriteAllText(RutaTa, CadenaTa);
 
-                                // Guardarlo en la base de datos
-                                Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("AFIP.TicketAcceso", CadenaTa);
+                                // Guardarlo en la base de datos con clave por entorno
+                                string claveDb = esHomo ? "AFIP.TicketAcceso.Homo" : "AFIP.TicketAcceso.Prod";
+                                Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting(claveDb, CadenaTa);
+
+                                // Si es producción, actualizar también la clave histórica por retrocompatibilidad
+                                if (!esHomo) {
+                                        Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("AFIP.TicketAcceso", CadenaTa);
+                                }
                         } catch { 
                                 // Nada
                         }
+                }
+
+                protected void GuardarTicketDeAcceso(Afip.Ws.Autenticacion.TicketAcceso ta)
+                {
+                        bool esHomo = this.EsHomologacionAfip();
+                        string cuit = Lbl.Sys.Config.Empresa.ClaveTributaria != null ? Lbl.Sys.Config.Empresa.ClaveTributaria.ToString() : "";
+                        this.GuardarTicketDeAcceso(ta, esHomo, cuit);
                 }
 
                 /// <summary>
@@ -294,47 +418,66 @@ namespace Lazaro.Base.Controller
                 /// <returns>Un ticket de acceso válido o null en caso de error.</returns>
                 protected Afip.Ws.Autenticacion.TicketAcceso ObtenerTicketDeAcceso()
                 {
-                        var RutaTa = System.IO.Path.Combine(Lfx.Environment.Folders.TemporaryFolder, "ticketacceso.dat");
+                        bool esHomo = this.EsHomologacionAfip();
+                        string cuit = Lbl.Sys.Config.Empresa.ClaveTributaria != null ? Lbl.Sys.Config.Empresa.ClaveTributaria.ToString() : "";
 
-                        // Buscar un ticket guardado en un archivo local
+                        // 1. Buscar un ticket guardado en el archivo local de la empresa
+                        var RutaTa = this.ObtenerRutaArchivoTicketAcceso(esHomo);
                         if (System.IO.File.Exists(RutaTa)) {
-                                // Existe un archivo... lo uso
                                 var CadenaTaArchivo = System.IO.File.ReadAllText(RutaTa);
-                                var TicketGuardadoEnArchivo = this.DecodificarTicketDeAcceso(CadenaTaArchivo);
+                                var TicketGuardadoEnArchivo = this.DecodificarTicketDeAcceso(CadenaTaArchivo, cuit);
 
                                 if (TicketGuardadoEnArchivo != null && TicketGuardadoEnArchivo.EsValido()) {
-                                        // El ticket todavía es válido... lo uso
                                         return TicketGuardadoEnArchivo;
                                 }
-
                         }
 
-                        // Buscar un ticket guardado en la base de datos
-                        var CadenaDb = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("AFIP.TicketAcceso", null);
-                        var TicketGuardadoEnDb = this.DecodificarTicketDeAcceso(CadenaDb);
+                        // 2. Buscar un ticket guardado en la base de datos para este entorno
+                        string claveDb = esHomo ? "AFIP.TicketAcceso.Homo" : "AFIP.TicketAcceso.Prod";
+                        var CadenaDb = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>(claveDb, null);
+
+                        // Fallback retrocompatible para producción si no se encontró en AFIP.TicketAcceso.Prod
+                        if (CadenaDb == null && !esHomo) {
+                                CadenaDb = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("AFIP.TicketAcceso", null);
+                        }
+
+                        var TicketGuardadoEnDb = this.DecodificarTicketDeAcceso(CadenaDb, cuit);
                         if (TicketGuardadoEnDb != null && TicketGuardadoEnDb.EsValido()) {
-                                // El ticket todavía es válido... lo uso
                                 return TicketGuardadoEnDb;
                         }
 
-                        // Parece que no hay un ticket o ya no es válido. Pedir uno nuevo.
+                        // 3. Parece que no hay un ticket o ya no es válido. Pedir uno nuevo a AFIP (WSAA).
                         var CliWsass = new Afip.Ws.Autenticacion.ServicioAutenticacion();
-                        CliWsass.RutaCertificado = System.IO.Path.Combine(Lbl.Sys.Config.CarpetaEmpresa, "AFIP", "Certificado.p12");
+                        CliWsass.Homologacion = esHomo;
+                        CliWsass.RutaCertificado = this.ObtenerRutaCertificadoAfip(esHomo);
                         var Ta = CliWsass.Autenticar();
 
                         // Guardar el ticket para reusar
-                        this.GuardarTicketDeAcceso(Ta);
+                        this.GuardarTicketDeAcceso(Ta, esHomo, cuit);
 
                         return Ta;
                 }
 
-                protected Afip.Ws.Autenticacion.TicketAcceso DecodificarTicketDeAcceso(string cadenaTa)
+                /// <summary>
+                /// Decodifica la cadena serializada del ticket de acceso.
+                /// Valida que el formato sea correcto y que, si posee CUIT registrado, coincida con el CUIT esperado.
+                /// </summary>
+                protected Afip.Ws.Autenticacion.TicketAcceso DecodificarTicketDeAcceso(string cadenaTa, string cuitEsperado = null)
                 {
                         try {
                                 if (string.IsNullOrWhiteSpace(cadenaTa) == false) {
-                                        // Hay un ticket guardado en la configuración
                                         var Partes = cadenaTa.Split(new string[] { "|lazaro_separador|" }, StringSplitOptions.None);
-                                        if (Partes.Length == 4) {
+                                        if (Partes.Length >= 4) {
+                                                // Si incluye el CUIT (5 partes), validar coincidencia con el negocio actual
+                                                if (Partes.Length >= 5 && !string.IsNullOrWhiteSpace(cuitEsperado)) {
+                                                        string cuitGuardado = Partes[4].Trim();
+                                                        string cuitEsp = cuitEsperado.Replace("-", "").Replace(" ", "").Replace(".", "").Trim();
+                                                        if (!string.IsNullOrEmpty(cuitGuardado) && !string.Equals(cuitGuardado, cuitEsp, StringComparison.OrdinalIgnoreCase)) {
+                                                                // Pertenece a otra empresa o CUIT
+                                                                return null;
+                                                        }
+                                                }
+
                                                 var Ta = new Afip.Ws.Autenticacion.TicketAcceso();
                                                 Ta.Token = Partes[0];
                                                 Ta.Sign = Partes[1];

@@ -190,5 +190,35 @@ namespace Lbl.Sys
                                 return m_CarpetaEmpresa;
                         }
                 }
+
+                /// <summary>
+                /// Determina o configura si el sistema debe operar contra el entorno de Homologación de AFIP.
+                /// Prioridad: variable de entorno LAZARO_AFIP_HOMOLOGACION / AFIP_HOMO > sys_config ("AFIP.Homologacion").
+                /// </summary>
+                public static bool AfipHomologacion
+                {
+                        get
+                        {
+                                string env = Environment.GetEnvironmentVariable("LAZARO_AFIP_HOMOLOGACION") 
+                                        ?? Environment.GetEnvironmentVariable("AFIP_HOMO");
+                                if (env == "1" || string.Equals(env, "true", StringComparison.OrdinalIgnoreCase))
+                                        return true;
+                                if (env == "0" || string.Equals(env, "false", StringComparison.OrdinalIgnoreCase))
+                                        return false;
+
+                                try {
+                                        string val = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("AFIP.Homologacion", "0");
+                                        return val == "1" || string.Equals(val, "true", StringComparison.OrdinalIgnoreCase);
+                                } catch {
+                                        return false;
+                                }
+                        }
+                        set
+                        {
+                                try {
+                                        Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("AFIP.Homologacion", value ? "1" : "0");
+                                } catch { }
+                        }
+                }
         }
 }

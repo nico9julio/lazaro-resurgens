@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Xml;
 using System.Security.Cryptography;
@@ -17,14 +17,52 @@ namespace Afip.Ws.Autenticacion
                 // No se usa UInt32 porque no es compatible con CLS
                 public static long UniqueId = 1;
 
+                /// <summary>
+                /// URLs oficiales de AFIP para WSAA (Servicio de Autenticación y Autorización).
+                /// </summary>
+                public const string UrlWsaaProduccion = "https://wsaa.afip.gov.ar/ws/services/LoginCms";
+                public const string UrlWsaaHomologacion = "https://wsaahomo.afip.gov.ar/ws/services/LoginCms";
+
+                /// <summary>
+                /// Flag global para activar el entorno de homologación en WSAA.
+                /// </summary>
+                public static bool ModoHomologacion = false;
+
+                /// <summary>
+                /// Flag a nivel de instancia para alternar entre Producción y Homologación en WSAA.
+                /// </summary>
+                public bool Homologacion { get; set; }
+
                 // Identificacion del WSN para el cual se solicita el TA
                 public string Servicio = "wsfe";
 
-                // Identificacion del WSN para el cual se solicita el TA
-                public string UrlWsaa = "http://wsaahomo.afip.gov.ar/ws/services/LoginCms?WSDL";
+                // Identificacion del WSN para el cual se solicita el TA (si es null se resuelve automáticamente)
+                public string UrlWsaa = null;
 
                 // Ruta del certificado X509 (con clave privada) usado para firmar, en formato PKCS 12 (.p12)
                 public string RutaCertificado = @"Certificado.p12";
+
+                /// <summary>
+                /// Determina si esta instancia debe operar contra el entorno de homologación.
+                /// </summary>
+                public bool EsHomologacionActivo()
+                {
+                        return this.Homologacion 
+                                || ModoHomologacion 
+                                || Environment.GetEnvironmentVariable("LAZARO_AFIP_HOMOLOGACION") == "1"
+                                || Environment.GetEnvironmentVariable("AFIP_HOMO") == "1";
+                }
+
+                /// <summary>
+                /// Resuelve la URL del WSAA según la configuración y el entorno.
+                /// </summary>
+                public string ObtenerUrlWsaa()
+                {
+                        if (!string.IsNullOrWhiteSpace(this.UrlWsaa)) {
+                                return this.UrlWsaa;
+                        }
+                        return this.EsHomologacionActivo() ? UrlWsaaHomologacion : UrlWsaaProduccion;
+                }
 
                 /// <summary>
                 /// Autenticar
@@ -45,8 +83,8 @@ namespace Afip.Ws.Autenticacion
                         var CmsFirmadoBase64 = Convert.ToBase64String(CmsFirmado.Encode());
 
                         // Paso 3: Invocar al WSAA para obtener el Login Ticket Response
-                        using (var ServicioWsaa = new AfipAutenticacion.LoginCMSClient()) {
-                                // TODO: ServicioWsaa.Url = this.UrlWsaa;
+                        string urlWsaa = this.ObtenerUrlWsaa();
+                        using (var ServicioWsaa = string.IsNullOrWhiteSpace(urlWsaa) ? new AfipAutenticacion.LoginCMSClient() : new AfipAutenticacion.LoginCMSClient("LoginCms", urlWsaa)) {
 
                                 var LoginTicketResponse = ServicioWsaa.loginCms(CmsFirmadoBase64);
 
