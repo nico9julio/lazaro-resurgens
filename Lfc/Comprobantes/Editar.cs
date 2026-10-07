@@ -450,15 +450,15 @@ namespace Lfc.Comprobantes
                                 return;
 
                         IgnorarEventos = true;
-                        if (EntradaSubTotal.ValueDecimal > 0) {
-                                decimal Descuento = (EntradaTotal.ValueDecimal - EntradaIva.ValueDecimal) / EntradaSubTotal.ValueDecimal;
-                                if (Descuento < 1) {
-                                        EntradaDescuento.ValueDecimal = (1 - Descuento) * 100m;
+                        decimal subtotalBase = EntradaSubTotalIva.ValueDecimal > 0 ? EntradaSubTotalIva.ValueDecimal : EntradaSubTotal.ValueDecimal;
+                        if (subtotalBase > 0) {
+                                decimal ratio = EntradaTotal.ValueDecimal / subtotalBase;
+                                if (ratio < 1m) {
+                                        EntradaDescuento.ValueDecimal = Math.Round((1m - ratio) * 100m, 4);
                                         EntradaInteres.ValueDecimal = 0m;
                                 } else {
-                                        EntradaInteres.ValueDecimal = (Descuento - 1) * 100m;
+                                        EntradaInteres.ValueDecimal = Math.Round((ratio - 1m) * 100m, 4);
                                         EntradaDescuento.ValueDecimal = 0m;
-                                        // TODO: EntradaInteres.ShowBalloon("Se aplicó un recargo.");
                                 }
                         }
                         IgnorarEventos = false;

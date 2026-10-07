@@ -408,6 +408,22 @@ namespace Lbl.Comprobantes
         {
             get
             {
+                if (this.Tipo != null && this.Tipo.Letra == "C")
+                {
+                    return Math.Round(this.Subtotal * this.FactorDescuentoORecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
+                }
+
+                var alics = this.AlicuotasUsadas();
+                if (alics != null && alics.Count > 0)
+                {
+                    decimal res = 0m;
+                    foreach (var alic in alics.Values)
+                    {
+                        res += this.ImporteGravadoAlicuota(alic.Id) + this.TotalIvaAlicuota(alic.Id);
+                    }
+                    return res;
+                }
+
                 return Math.Round((this.SubtotalSinIva + this.ImporteIva) * this.FactorDescuentoORecargo, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
             }
         }

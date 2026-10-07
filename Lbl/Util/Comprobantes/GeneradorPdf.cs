@@ -332,20 +332,41 @@ namespace Lazaro.Base.Util.Comprobantes
 
             Tf.Alignment = XParagraphAlignment.Left;
             if (Comprob.Tipo.DiscriminaIva) {
-                Tf.DrawString("Subtotal\nIVA\nDescuento / recargo", FuentePredeterminada, XBrushes.Black, CuadroTotales);
-                Tf.Alignment = XParagraphAlignment.Right;
-                Tf.DrawString(string.Concat(
-                        Lfx.Types.Formatting.FormatCurrency(Comprob.SubtotalSinIvaFinal), "\n",
-                        Lfx.Types.Formatting.FormatCurrency(Comprob.ImporteIvaDiscriminadoFinal), "\n",
-                        Lfx.Types.Formatting.FormatNumber(Comprob.Descuento, 2) + "%"
-                        ), FuenteResaltada, XBrushes.Black, CuadroTotales);
+                if (Comprob.Descuento != 0 || Comprob.Recargo != 0) {
+                    string descRecLabel = Comprob.Descuento != 0 ? "Descuento" : "Recargo";
+                    decimal descRecPct = Comprob.Descuento != 0 ? Comprob.Descuento : Comprob.Recargo;
+                    string signo = Comprob.Descuento != 0 ? "-" : "+";
+                    Tf.DrawString("Subtotal\n" + descRecLabel + "\nIVA", FuentePredeterminada, XBrushes.Black, CuadroTotales);
+                    Tf.Alignment = XParagraphAlignment.Right;
+                    Tf.DrawString(string.Concat(
+                            Lfx.Types.Formatting.FormatCurrency(Comprob.SubtotalSinIva), "\n",
+                            signo + Lfx.Types.Formatting.FormatNumber(descRecPct, 2) + "%\n",
+                            Lfx.Types.Formatting.FormatCurrency(Comprob.ImporteIvaDiscriminadoFinal)
+                            ), FuenteResaltada, XBrushes.Black, CuadroTotales);
+                } else {
+                    Tf.DrawString("Subtotal\nIVA", FuentePredeterminada, XBrushes.Black, CuadroTotales);
+                    Tf.Alignment = XParagraphAlignment.Right;
+                    Tf.DrawString(string.Concat(
+                            Lfx.Types.Formatting.FormatCurrency(Comprob.SubtotalSinIva), "\n",
+                            Lfx.Types.Formatting.FormatCurrency(Comprob.ImporteIvaDiscriminadoFinal)
+                            ), FuenteResaltada, XBrushes.Black, CuadroTotales);
+                }
             } else {
-                Tf.DrawString("Subtotal\nDescuento / recargo", FuentePredeterminada, XBrushes.Black, CuadroTotales);
-                Tf.Alignment = XParagraphAlignment.Right;
-                Tf.DrawString(string.Concat(
-                        Lfx.Types.Formatting.FormatCurrency(Comprob.Subtotal), "\n",
-                        Lfx.Types.Formatting.FormatNumber(Comprob.Descuento, 2) + "%"
-                        ), FuenteResaltada, XBrushes.Black, CuadroTotales);
+                if (Comprob.Descuento != 0 || Comprob.Recargo != 0) {
+                    string descRecLabel = Comprob.Descuento != 0 ? "Descuento" : "Recargo";
+                    decimal descRecPct = Comprob.Descuento != 0 ? Comprob.Descuento : Comprob.Recargo;
+                    string signo = Comprob.Descuento != 0 ? "-" : "+";
+                    Tf.DrawString("Subtotal\n" + descRecLabel, FuentePredeterminada, XBrushes.Black, CuadroTotales);
+                    Tf.Alignment = XParagraphAlignment.Right;
+                    Tf.DrawString(string.Concat(
+                            Lfx.Types.Formatting.FormatCurrency(Comprob.Subtotal), "\n",
+                            signo + Lfx.Types.Formatting.FormatNumber(descRecPct, 2) + "%"
+                            ), FuenteResaltada, XBrushes.Black, CuadroTotales);
+                } else {
+                    Tf.DrawString("Subtotal", FuentePredeterminada, XBrushes.Black, CuadroTotales);
+                    Tf.Alignment = XParagraphAlignment.Right;
+                    Tf.DrawString(Lfx.Types.Formatting.FormatCurrency(Comprob.Subtotal), FuenteResaltada, XBrushes.Black, CuadroTotales);
+                }
             }
 
             //Tf.DrawString("\nSon ciento veintitresmil cuatrocientos cincuenta y seis pesos con 00/100.", FuentePequena, XBrushes.Black, CuadroTotales);
