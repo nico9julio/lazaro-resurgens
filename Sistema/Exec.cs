@@ -377,7 +377,7 @@ namespace Lazaro.WinMain
                                 if (TipoListado == null)
                                         throw new NotImplementedException("LISTAR " + SubComandoListado);
                                 else
-                                        FormularioListado = Lfc.Instanciador.InstanciarFormularioListado(TipoListado, SubComandoListado.Length > 0 ? SubComandoListado : null);
+                                        FormularioListado = Lfc.Instanciador.InstanciarFormularioListado(TipoListado, comando.Length > 0 ? comando : null);
                         } else {
                                 return new Lfx.Types.NoAccessOperationResult();
                         }

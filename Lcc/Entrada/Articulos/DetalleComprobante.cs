@@ -16,6 +16,7 @@ namespace Lcc.Entrada.Articulos
                 protected Lbl.Articulos.ColeccionDatosSeguimiento m_DatosSeguimiento = new Lbl.Articulos.ColeccionDatosSeguimiento();
                 protected Lbl.Impuestos.Alicuota m_Alicuota = null;
                 protected decimal m_ImporteUnitarioIva = 0m;
+                protected bool m_Recalculando = false;
 
                 new public event System.Windows.Forms.KeyEventHandler KeyDown;
                 public event System.EventHandler ImportesChanged;
@@ -472,11 +473,13 @@ namespace Lcc.Entrada.Articulos
                         }
                         set
                         {
-                                this.m_ImporteUnitarioIva = value;
-                                if(this.DiscriminarIva) {
-                                        this.EntradaUnitarioIvaDescuentoCantidad_TextChanged(this, null);
+                                if (this.m_ImporteUnitarioIva != value) {
+                                        this.m_ImporteUnitarioIva = value;
+                                        if (this.DiscriminarIva && !m_Recalculando) {
+                                                this.EntradaUnitarioIvaDescuentoCantidad_TextChanged(this, null);
+                                        }
+                                        this.Changed = false;
                                 }
-                                this.Changed = false;
                         }
                 }
 
@@ -634,15 +637,23 @@ namespace Lcc.Entrada.Articulos
 
                 private void EntradaUnitarioIvaDescuentoCantidad_TextChanged(object sender, System.EventArgs e)
                 {
+                        if (m_Recalculando)
+                                return;
+
                         if (this.Connection != null) {
-                                decimal ValorAnterior = EntradaImporte.ValueDecimal;
-                                this.RecalcularImporteFinal();
-                                this.VerificarStock();
-                                if (EntradaImporte.ValueDecimal != ValorAnterior) {
-                                        this.Changed = true;
-                                        if (null != ImportesChanged) {
-                                                ImportesChanged(this, null);
+                                m_Recalculando = true;
+                                try {
+                                        decimal ValorAnterior = EntradaImporte.ValueDecimal;
+                                        this.RecalcularImporteFinal();
+                                        this.VerificarStock();
+                                        if (EntradaImporte.ValueDecimal != ValorAnterior) {
+                                                this.Changed = true;
+                                                if (null != ImportesChanged) {
+                                                        ImportesChanged(this, null);
+                                                }
                                         }
+                                } finally {
+                                        m_Recalculando = false;
                                 }
                         }
                 }
@@ -1002,37 +1013,54 @@ namespace Lcc.Entrada.Articulos
                 /// </summary>
                 protected void RecalcularImporteFinal()
                 {
-                        int decimales = Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales;
+                        if (m_Recalculando)
+                                return;
 
-                        if (m_DiscriminarIva) {
-                                if (m_AplicarIva && this.m_Alicuota != null) {
-                                        decimal Iva = Math.Round(this.ImporteUnitario * (this.m_Alicuota.Porcentaje / 100m), decimales, MidpointRounding.AwayFromZero);
-                                        this.ImporteIvaUnitario = Iva;
-                                } else {
-                                        this.ImporteIvaUnitario = 0m;
-                                }
-                                EntradaIva.ValueDecimal = this.ImporteIvaUnitario;
-                        } else {
-                                if (m_AplicarIva && this.m_Alicuota != null && this.m_Alicuota.Porcentaje > 0) {
-                                        decimal precioConIva = this.ImporteUnitario;
-                                        decimal neto = Math.Round(precioConIva / (1m + this.m_Alicuota.Porcentaje / 100m), decimales, MidpointRounding.AwayFromZero);
-                                        this.ImporteIvaUnitario = precioConIva - neto;
-                                } else {
-                                        this.ImporteIvaUnitario = 0m;
-                                }
-                                EntradaIva.ValueDecimal = 0m;
-                        }
-
+                        m_Recalculando = true;
                         try {
-                                decimal unitarioFinal = Math.Round((this.ImporteUnitario + this.ImporteIvaDiscriminadoUnitario) * (1m - this.Descuento / 100m), decimales, MidpointRounding.AwayFromZero);
-                                decimal ImporteFinal = Math.Round(unitarioFinal * this.Cantidad, decimales, MidpointRounding.AwayFromZero);
-                                EntradaImporte.ValueDecimal = ImporteFinal;
-                        } catch {
-                                EntradaImporte.ValueDecimal = 0m;
-                        }
+                                int decimales = Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales;
 
-                        if (m_MostrarExistencias) {
-                                VerificarStock();
+                                if (m_DiscriminarIva) {
+                                        if (m_AplicarIva && this.m_Alicuota != null) {
+                                                decimal Iva = Math.Round(this.ImporteUnitario * (this.m_Alicuota.Porcentaje / 100m), decimales, MidpointRounding.AwayFromZero);
+                                                if (this.ImporteIvaUnitario != Iva)
+                                                        this.ImporteIvaUnitario = Iva;
+                                        } else {
+                                                if (this.ImporteIvaUnitario != 0m)
+                                                        this.ImporteIvaUnitario = 0m;
+                                        }
+                                        if (EntradaIva.ValueDecimal != this.ImporteIvaUnitario)
+                                                EntradaIva.ValueDecimal = this.ImporteIvaUnitario;
+                                } else {
+                                        if (m_AplicarIva && this.m_Alicuota != null && this.m_Alicuota.Porcentaje > 0) {
+                                                decimal precioConIva = this.ImporteUnitario;
+                                                decimal neto = Math.Round(precioConIva / (1m + this.m_Alicuota.Porcentaje / 100m), decimales, MidpointRounding.AwayFromZero);
+                                                decimal iva = precioConIva - neto;
+                                                if (this.ImporteIvaUnitario != iva)
+                                                        this.ImporteIvaUnitario = iva;
+                                        } else {
+                                                if (this.ImporteIvaUnitario != 0m)
+                                                        this.ImporteIvaUnitario = 0m;
+                                        }
+                                        if (EntradaIva.ValueDecimal != 0m)
+                                                EntradaIva.ValueDecimal = 0m;
+                                }
+
+                                try {
+                                        decimal unitarioFinal = Math.Round((this.ImporteUnitario + this.ImporteIvaDiscriminadoUnitario) * (1m - this.Descuento / 100m), decimales, MidpointRounding.AwayFromZero);
+                                        decimal ImporteFinal = Math.Round(unitarioFinal * this.Cantidad, decimales, MidpointRounding.AwayFromZero);
+                                        if (EntradaImporte.ValueDecimal != ImporteFinal)
+                                                EntradaImporte.ValueDecimal = ImporteFinal;
+                                } catch {
+                                        if (EntradaImporte.ValueDecimal != 0m)
+                                                EntradaImporte.ValueDecimal = 0m;
+                                }
+
+                                if (m_MostrarExistencias) {
+                                        VerificarStock();
+                                }
+                        } finally {
+                                m_Recalculando = false;
                         }
                 }
         }
