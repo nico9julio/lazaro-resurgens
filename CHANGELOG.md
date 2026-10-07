@@ -4,7 +4,28 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
----
+## [2.0.9777] - 2026-10-07
+
+### Fixed
+- **Factura C y Régimen Monotributo — Blindaje ante el IVA (AFIP WSFE):**
+  - **Problema corregido:** En una Factura C emitida por un contribuyente Monotributista nunca debe calcularse ni discriminarse IVA. Sin embargo, al facturar a un Consumidor Final (o a otro cliente no exento), la interfaz evaluaba la propiedad interna `AplicaIva = true`. Al incorporar un artículo en moneda extranjera (USD) que tenía configurada una alícuota en su ficha (por ejemplo, 21%), el sistema le recargaba automáticamente el 21% de IVA al precio unitario o, si el usuario corregía el precio en la grilla, intentaba desglosarlo dividiendo por 1.21 para calcular una base neta ficticia.
+  - **Ejemplo:** Un artículo costaba US$ 10 a una cotización de $1.000 (total esperado: $10.000). El sistema le sumaba un 21% ficticio convirtiéndolo a $12.100. Si el usuario corregía el total manualmente a $10.000, el sistema le quitaba el 21% para calcular el "Neto" ($8.264,46). Al enviar la Factura C a AFIP, el webservice WSFE exige estrictamente la igualdad `ImpTotal == ImpNeto` e `ImpIVA == 0`. Al recibir un importe neto inferior al total, AFIP rechazaba el comprobante por inconsistencia de importes.
+  - **Solución e implicancia:** En comprobantes tipo C, `AplicaIva` y `DiscriminarIva` quedan forzados permanentemente a `false`. `SubtotalSinIva` e `ImporteSinIvaFinal` devuelven el total íntegro del comprobante y el IVA es incondicionalmente $0,00. Todo valor ingresado es precio final directo y AFIP aprueba el comprobante sin errores.
+
+- **Facturación Mixta Multimoneda — Residuos Flotantes y Truncamiento:**
+  - **Problema corregido:** Los artículos en pesos tienen precios con centavos fijos (ej. $1.500,00), mientras que un artículo en dólares multiplicado por una cotización produce números decimales flotantes extendidos (ej. US$ 12,35 × $1.150,25 = $14.205,5875). Anteriormente, la cotización no se redondeaba de inmediato a 2 decimales y la grilla de la interfaz utilizaba truncamiento hacia abajo (`Currency.Truncate`), mientras que el backend enviaba decimales completos o calculaba con otra precisión.
+  - **Ejemplo:** Al combinar en una misma factura un artículo en pesos de $1.000,00 con un artículo en dólares convertido a $1.396,7265:
+    - En pantalla la grilla truncaba hacia abajo a $1.396,72, mostrando un subtotal visible de $2.396,72.
+    - El backend o el servicio de AFIP redondeaba matemáticamente hacia arriba a $2.396,73.
+    - La discrepancia de $0,01 hacía que AFIP rechazara la factura o que el total impreso en el PDF difiriera de la suma visual de los renglones.
+  - **Solución e implicancia:** El precio convertido (`PvpLocal`) se redondea de inmediato con redondeo simétrico bancario a 2 decimales (`MidpointRounding.AwayFromZero`). Tanto los artículos en pesos como los artículos en dólares operan exactamente sobre la misma base monetaria estándar, eliminando saltos de centavos al mezclar monedas.
+
+- **Descuentos y Recargos — Unificación del Orden de Redondeo:**
+  - **Problema corregido:** Existía disparidad en la fórmula matemática aplicada al calcular descuentos por artículo: la grilla de la interfaz calculaba `Round(Precio × Cantidad × (1 - Descuento))`, mientras que el modelo de datos de negocio y el generador de PDF calculaban `Round(Precio × (1 - Descuento)) × Cantidad`. Además, al aplicar descuentos globales sobre el comprobante en Factura C, el recálculo proporcional inverso podía diferir en centavos con respecto a la resta directa.
+  - **Ejemplo:** Al vender 3 unidades de un producto de $105,50 con 10% de descuento:
+    - Según el orden de operaciones, el redondeo podía arrojar $284,84 en un componente y $284,85 en otro.
+    - En descuentos globales, si el subtotal era de $10.000 y se aplicaba un descuento para que el total quede en $9.000, el recálculo inverso podía derivar un descuento de $999,99 o $1.000,01.
+  - **Solución e implicancia:** Se unificó el orden de cálculo en toda la aplicación (grilla de entrada, modelo de datos y PDF): primero se calcula y redondea el precio unitario final con descuento a 2 decimales y luego se multiplica por la cantidad. En Factura C, el importe de descuento/recargo global se calcula restando directamente `Subtotal - Total`, garantizando que la suma visual en pantalla, el comprobante impreso en PDF y el lote enviado a AFIP coincidan con exactitud matemática al centavo.
 
 ## [2.0.9776] - 2026-10-06
 
