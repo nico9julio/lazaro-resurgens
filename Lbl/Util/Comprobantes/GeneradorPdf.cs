@@ -306,7 +306,7 @@ namespace Lazaro.Base.Util.Comprobantes
                 Codigos += CodigoImprimir + "\n";
                 Detalles += DetalleImprimir + "\n";
                 Cantidades += Lfx.Types.Formatting.FormatNumberForPrint(Det.Cantidad, Lbl.Sys.Config.Articulos.Decimales) + "\n";
-                Unitarios += Lfx.Types.Formatting.FormatCurrencyForPrint(Det.ImporteUnitarioFinalAImprimir, Lfx.Workspace.Master.CurrentConfig.Moneda.DecimalesCosto) + "\n";
+                Unitarios += Lfx.Types.Formatting.FormatCurrencyForPrint(Det.ImporteUnitarioFinalAImprimir, Lfx.Workspace.Master.CurrentConfig.Moneda.DecimalesFinal) + "\n";
                 Importes += Lfx.Types.Formatting.FormatCurrencyForPrint(Det.ImporteAImprimir, Lfx.Workspace.Master.CurrentConfig.Moneda.DecimalesFinal) + "\n";
             }
             Tf.DrawString(Codigos, FuenteArticulos, XBrushes.Black, CuadroArticulosCodigos);
@@ -331,13 +331,22 @@ namespace Lazaro.Base.Util.Comprobantes
             var CuadroTotales = new XRect(AreaUsable.Left, CuadroObs.Bottom + 4 * mm, 50 * mm, 14 * mm);
 
             Tf.Alignment = XParagraphAlignment.Left;
-            Tf.DrawString("Subtotal\nIVA\nDescuento / recargo", FuentePredeterminada, XBrushes.Black, CuadroTotales);
-            Tf.Alignment = XParagraphAlignment.Right;
-            Tf.DrawString(string.Concat(
-                    Lfx.Types.Formatting.FormatCurrency(Comprob.SubtotalSinIvaFinal), "\n",
-                    Lfx.Types.Formatting.FormatCurrency(Comprob.ImporteIvaDiscriminadoFinal), "\n",
-                    Lfx.Types.Formatting.FormatNumber(Comprob.Descuento, 2) + "%"
-                    ), FuenteResaltada, XBrushes.Black, CuadroTotales);
+            if (Comprob.Tipo.DiscriminaIva) {
+                Tf.DrawString("Subtotal\nIVA\nDescuento / recargo", FuentePredeterminada, XBrushes.Black, CuadroTotales);
+                Tf.Alignment = XParagraphAlignment.Right;
+                Tf.DrawString(string.Concat(
+                        Lfx.Types.Formatting.FormatCurrency(Comprob.SubtotalSinIvaFinal), "\n",
+                        Lfx.Types.Formatting.FormatCurrency(Comprob.ImporteIvaDiscriminadoFinal), "\n",
+                        Lfx.Types.Formatting.FormatNumber(Comprob.Descuento, 2) + "%"
+                        ), FuenteResaltada, XBrushes.Black, CuadroTotales);
+            } else {
+                Tf.DrawString("Subtotal\nDescuento / recargo", FuentePredeterminada, XBrushes.Black, CuadroTotales);
+                Tf.Alignment = XParagraphAlignment.Right;
+                Tf.DrawString(string.Concat(
+                        Lfx.Types.Formatting.FormatCurrency(Comprob.Subtotal), "\n",
+                        Lfx.Types.Formatting.FormatNumber(Comprob.Descuento, 2) + "%"
+                        ), FuenteResaltada, XBrushes.Black, CuadroTotales);
+            }
 
             //Tf.DrawString("\nSon ciento veintitresmil cuatrocientos cincuenta y seis pesos con 00/100.", FuentePequena, XBrushes.Black, CuadroTotales);
 

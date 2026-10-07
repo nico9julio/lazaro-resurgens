@@ -209,7 +209,11 @@ namespace Lbl.Comprobantes
                 {
                         get
                         {
-                                return this.Cantidad * this.ImporteUnitarioFinalAImprimir;
+                                if (this.ComprobanteDiscriminaIva()) {
+                                        return this.ImporteSinIvaFinal;
+                                } else {
+                                        return this.ImporteTotalConIvaFinal;
+                                }
                         }
                 }
 
@@ -292,7 +296,11 @@ namespace Lbl.Comprobantes
                 {
                         get
                         {
-                                return this.ImporteUnitarioAImprimir * (1 + this.Recargo / 100);
+                                if (this.ComprobanteDiscriminaIva()) {
+                                        return this.ImporteUnitarioSinIvaFinal;
+                                } else {
+                                        return this.ImporteUnitarioConIvaFinal;
+                                }
                         }
                 }
 
