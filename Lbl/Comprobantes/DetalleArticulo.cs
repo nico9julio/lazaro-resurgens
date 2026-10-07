@@ -228,6 +228,11 @@ namespace Lbl.Comprobantes
                                 if (this.ComprobanteDiscriminaIva()) {
                                         return Math.Round(this.Cantidad * this.ImporteUnitarioSinIvaFinal, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
                                 } else {
+                                        Lbl.Comprobantes.ComprobanteConArticulos comprob = this.ElementoPadre as Lbl.Comprobantes.ComprobanteConArticulos;
+                                        if (comprob != null && comprob.Tipo != null && comprob.Tipo.Letra == "C") {
+                                                return this.ImporteTotalConIvaFinal;
+                                        }
+
                                         var Alic = this.ObtenerAlicuota();
                                         if (Alic != null && Alic.Porcentaje > 0) {
                                                 decimal totalConIva = this.ImporteTotalConIvaFinal;

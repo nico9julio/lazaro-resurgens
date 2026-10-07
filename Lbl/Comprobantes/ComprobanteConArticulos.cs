@@ -145,10 +145,16 @@ namespace Lbl.Comprobantes
         {
             get
             {
+                if (this.Descuento == 0)
+                    return 0m;
+
+                if (this.Tipo != null && this.Tipo.Letra == "C" && this.Recargo == 0)
+                    return this.Subtotal - this.Total;
+
                 if (Lbl.Sys.Config.Moneda.UnidadMonetariaMinima > 0)
                     return Math.Floor((this.Subtotal * this.Descuento / 100m) / Lbl.Sys.Config.Moneda.UnidadMonetariaMinima) * Lbl.Sys.Config.Moneda.UnidadMonetariaMinima;
                 else
-                    return Math.Round(this.Subtotal * this.Descuento / 100m, Lbl.Sys.Config.Moneda.DecimalesFinal);
+                    return Math.Round(this.Subtotal * this.Descuento / 100m, Lbl.Sys.Config.Moneda.DecimalesFinal, MidpointRounding.AwayFromZero);
             }
         }
 
@@ -160,10 +166,16 @@ namespace Lbl.Comprobantes
         {
             get
             {
+                if (this.Recargo == 0)
+                    return 0m;
+
+                if (this.Tipo != null && this.Tipo.Letra == "C" && this.Descuento == 0)
+                    return this.Total - this.Subtotal;
+
                 if (Lbl.Sys.Config.Moneda.UnidadMonetariaMinima > 0)
                     return Math.Floor((Subtotal * this.Recargo / 100m) / Lbl.Sys.Config.Moneda.UnidadMonetariaMinima) * Lbl.Sys.Config.Moneda.UnidadMonetariaMinima;
                 else
-                    return Math.Round(Subtotal * this.Recargo / 100m, Lbl.Sys.Config.Moneda.DecimalesFinal);
+                    return Math.Round(Subtotal * this.Recargo / 100m, Lbl.Sys.Config.Moneda.DecimalesFinal, MidpointRounding.AwayFromZero);
             }
         }
 
@@ -364,6 +376,9 @@ namespace Lbl.Comprobantes
         {
             get
             {
+                if (this.Tipo != null && this.Tipo.Letra == "C")
+                    return this.Subtotal;
+
                 decimal Res = 0;
                 foreach (DetalleArticulo Art in this.Articulos)
                 {
@@ -458,6 +473,9 @@ namespace Lbl.Comprobantes
         {
             get
             {
+                if (this.Tipo != null && this.Tipo.Letra == "C")
+                    return 0m;
+
                 if (this.Cliente != null)
                 {
                     if (this.Cliente.ObtenerSituacionIva() == Impuestos.SituacionIva.Exento)

@@ -352,7 +352,7 @@ namespace Lfc.Comprobantes
                         }
 
                         if(Cliente != null) {
-                                EntradaProductos.AplicaIva = Cliente.ObtenerSituacionIva() != Lbl.Impuestos.SituacionIva.Exento;
+                                EntradaProductos.AplicaIva = (this.Tipo == null || this.Tipo.Letra != "C") && Cliente.ObtenerSituacionIva() != Lbl.Impuestos.SituacionIva.Exento;
                         }
 
                         if (this.Tipo != null && this.Tipo.EsFacturaNCoND && this.Elemento.Existe == false && Cliente != null) {
@@ -481,6 +481,10 @@ namespace Lfc.Comprobantes
                                         Lbl.Comprobantes.ComprobanteConArticulos Registro = this.Elemento as Lbl.Comprobantes.ComprobanteConArticulos;
                                         Registro.Tipo = value;
                                         PnlCuotas.Visible = value.EsPresupuesto;
+                                        if (value != null && value.Letra == "C") {
+                                                this.DiscriminarIva = false;
+                                                this.AplicaIva = false;
+                                        }
                                         this.PonerTitulo();
                                 }
                         }

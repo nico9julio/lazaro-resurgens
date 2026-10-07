@@ -144,7 +144,7 @@ namespace Lfc.Comprobantes.Facturas
                         }
 
                         if (Res.Cliente != null) {
-                                this.AplicaIva = Res.Cliente.ObtenerSituacionIva() != Lbl.Impuestos.SituacionIva.Exento;
+                                this.AplicaIva = (Res.Tipo == null || Res.Tipo.Letra != "C") && Res.Cliente.ObtenerSituacionIva() != Lbl.Impuestos.SituacionIva.Exento;
                         }
 
                         if (Res.IdRemito == 0)
@@ -549,6 +549,10 @@ Un cliente " + Comprob.Cliente.SituacionTributaria.ToString() + @" debería llev
                                 base.Tipo = value;
                                 PanelFormaPago.Visible = value.EsFactura || value.EsTicket;
                                 PanelComprobanteOriginal.Visible = value.EsNotaCredito;
+                                if (value != null && value.Letra == "C") {
+                                        this.DiscriminarIva = false;
+                                        this.AplicaIva = false;
+                                }
                                 if (EntradaTipo.TextKey != value.Nomenclatura)
                                         EntradaTipo.TextKey = value.Nomenclatura;
                         }

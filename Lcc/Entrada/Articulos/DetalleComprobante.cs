@@ -532,7 +532,9 @@ namespace Lcc.Entrada.Articulos
                 {
                         get
                         {
-                                return this.ImporteUnitario * this.Cantidad * (1m - this.Descuento / 100m);
+                                int decimales = Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales;
+                                decimal unitarioFinal = Math.Round((this.ImporteUnitario + this.ImporteIvaDiscriminadoUnitario) * (1m - this.Descuento / 100m), decimales, MidpointRounding.AwayFromZero);
+                                return Math.Round(unitarioFinal * this.Cantidad, decimales, MidpointRounding.AwayFromZero);
                         }
                 }
 
@@ -1022,7 +1024,8 @@ namespace Lcc.Entrada.Articulos
                         }
 
                         try {
-                                decimal ImporteFinal = Math.Round((this.ImporteUnitario + this.ImporteIvaDiscriminadoUnitario) * this.Cantidad * (1m - this.Descuento / 100m), decimales, MidpointRounding.AwayFromZero);
+                                decimal unitarioFinal = Math.Round((this.ImporteUnitario + this.ImporteIvaDiscriminadoUnitario) * (1m - this.Descuento / 100m), decimales, MidpointRounding.AwayFromZero);
+                                decimal ImporteFinal = Math.Round(unitarioFinal * this.Cantidad, decimales, MidpointRounding.AwayFromZero);
                                 EntradaImporte.ValueDecimal = ImporteFinal;
                         } catch {
                                 EntradaImporte.ValueDecimal = 0m;
