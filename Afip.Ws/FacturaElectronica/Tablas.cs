@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -64,6 +64,7 @@ namespace Afip.Ws.FacturaElectronica
                         SinDefinir = 0,
                         Productos = 1,
                         Servicios = 2,
+                        ProductosYServicios = 3,
                 }
 
 

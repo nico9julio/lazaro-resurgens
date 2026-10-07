@@ -23,31 +23,28 @@ namespace Lazaro.Base.Util.Comprobantes
                                 Numero = numero,
                         };
 
-                        if ((ComprobanteSolCae.Conceptos | Tablas.Conceptos.Servicios) == Tablas.Conceptos.Servicios) {
+                        if ((ComprobanteSolCae.Conceptos & Tablas.Conceptos.Servicios) == Tablas.Conceptos.Servicios) {
+                                bool encontrado = false;
                                 foreach (var Art in comprobante.Articulos) {
-                                        if (Art.Articulo != null) {
+                                        if (Art.Articulo != null && Art.Articulo.TipoDeArticulo == Lbl.Articulos.TiposDeArticulo.Servicio) {
                                                 switch (Art.Articulo.Periodicidad) {
                                                         case Lbl.Articulos.Periodicidad.PorSemana:
-                                                                DateTime SemanaPasada = DateTime.Now;
-                                                                SemanaPasada.AddDays(-7);
-                                                                ComprobanteSolCae.ServicioFechaDesde = new DateTime(SemanaPasada.Year, SemanaPasada.Month, SemanaPasada.Day);
-                                                                ComprobanteSolCae.ServicioFechaHasta = DateTime.Now;
+                                                                DateTime semanaPasada = DateTime.Today.AddDays(-7);
+                                                                ComprobanteSolCae.ServicioFechaDesde = semanaPasada;
+                                                                ComprobanteSolCae.ServicioFechaHasta = DateTime.Today;
                                                                 break;
 
                                                         case Lbl.Articulos.Periodicidad.PorMes:
-                                                                DateTime MesPasado = DateTime.Now;
-                                                                MesPasado.AddMonths(-1);
-                                                                ComprobanteSolCae.ServicioFechaDesde = new DateTime(MesPasado.Year, MesPasado.Month, 1);
-                                                                ComprobanteSolCae.ServicioFechaHasta = new DateTime(MesPasado.Year, MesPasado.Month, DateTime.DaysInMonth(MesPasado.Year, MesPasado.Month));
+                                                                DateTime mesPasado = DateTime.Today.AddMonths(-1);
+                                                                ComprobanteSolCae.ServicioFechaDesde = new DateTime(mesPasado.Year, mesPasado.Month, 1);
+                                                                ComprobanteSolCae.ServicioFechaHasta = new DateTime(mesPasado.Year, mesPasado.Month, DateTime.DaysInMonth(mesPasado.Year, mesPasado.Month));
                                                                 break;
 
                                                         case Lbl.Articulos.Periodicidad.PorBimestre:
-                                                                DateTime MesPasado1 = DateTime.Now;
-                                                                MesPasado1.AddMonths(-1);
-                                                                DateTime MesPasado2 = DateTime.Now;
-                                                                MesPasado2.AddMonths(-2);
-                                                                ComprobanteSolCae.ServicioFechaDesde = new DateTime(MesPasado2.Year, MesPasado2.Month, 1);
-                                                                ComprobanteSolCae.ServicioFechaHasta = new DateTime(MesPasado1.Year, MesPasado1.Month, DateTime.DaysInMonth(MesPasado1.Year, MesPasado1.Month));
+                                                                DateTime mesPasado2 = DateTime.Today.AddMonths(-2);
+                                                                DateTime mesPasado1 = DateTime.Today.AddMonths(-1);
+                                                                ComprobanteSolCae.ServicioFechaDesde = new DateTime(mesPasado2.Year, mesPasado2.Month, 1);
+                                                                ComprobanteSolCae.ServicioFechaHasta = new DateTime(mesPasado1.Year, mesPasado1.Month, DateTime.DaysInMonth(mesPasado1.Year, mesPasado1.Month));
                                                                 break;
 
                                                         case Lbl.Articulos.Periodicidad.PorOcasion:
@@ -55,15 +52,21 @@ namespace Lazaro.Base.Util.Comprobantes
                                                         case Lbl.Articulos.Periodicidad.PorHora:
                                                         case Lbl.Articulos.Periodicidad.PorDia:
                                                         default:
-                                                                ComprobanteSolCae.ServicioFechaDesde = DateTime.Now;
-                                                                ComprobanteSolCae.ServicioFechaHasta = ComprobanteSolCae.ServicioFechaDesde;
+                                                                ComprobanteSolCae.ServicioFechaDesde = DateTime.Today;
+                                                                ComprobanteSolCae.ServicioFechaHasta = DateTime.Today;
                                                                 break;
                                                 }
+                                                encontrado = true;
                                                 break;
                                         }
                                 }
-                                
-                                ComprobanteSolCae.FechaVencimientoPago = DateTime.Now;
+
+                                if (!encontrado || ComprobanteSolCae.ServicioFechaDesde == DateTime.MinValue) {
+                                        ComprobanteSolCae.ServicioFechaDesde = DateTime.Today;
+                                        ComprobanteSolCae.ServicioFechaHasta = DateTime.Today;
+                                }
+
+                                ComprobanteSolCae.FechaVencimientoPago = DateTime.Today;
                         }
 
                         // Asignar cliente al comprobante

@@ -289,11 +289,19 @@ namespace Afip.Ws.FacturaElectronica
                                                 DetalleComprobante.CbtesAsoc = CbtesAsocList.ToArray();
                                         }
 
-                                        // Si es un comprobante con servicios, agregar los campos obligatorios
-                                        if ((Comprob.Conceptos | Tablas.Conceptos.Servicios) == Tablas.Conceptos.Servicios) {
-                                                DetalleComprobante.FchServDesde = Comprob.ServicioFechaDesde.ToString("yyyyMMdd");
-                                                DetalleComprobante.FchServHasta = Comprob.ServicioFechaHasta.ToString("yyyyMMdd");
-                                                DetalleComprobante.FchVtoPago = Comprob.FechaVencimientoPago.ToString("yyyyMMdd");
+                                        // Si es un comprobante con servicios (Concepto 2 o 3), agregar los campos obligatorios
+                                        if ((Comprob.Conceptos & Tablas.Conceptos.Servicios) == Tablas.Conceptos.Servicios) {
+                                                DateTime fchDesde = Comprob.ServicioFechaDesde > DateTime.MinValue ? Comprob.ServicioFechaDesde : DateTime.Today;
+                                                DateTime fchHasta = Comprob.ServicioFechaHasta > DateTime.MinValue ? Comprob.ServicioFechaHasta : DateTime.Today;
+                                                DateTime fchVto = Comprob.FechaVencimientoPago > DateTime.MinValue ? Comprob.FechaVencimientoPago : DateTime.Today;
+
+                                                if (fchHasta < fchDesde) {
+                                                        fchHasta = fchDesde;
+                                                }
+
+                                                DetalleComprobante.FchServDesde = fchDesde.ToString("yyyyMMdd");
+                                                DetalleComprobante.FchServHasta = fchHasta.ToString("yyyyMMdd");
+                                                DetalleComprobante.FchVtoPago = fchVto.ToString("yyyyMMdd");
                                         }
 
                                         DetallesComprobantes[i++] = DetalleComprobante;

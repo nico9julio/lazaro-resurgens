@@ -92,6 +92,10 @@ namespace Lbl.Comprobantes
                                 }
                         }
 
+                        if (Res == 0) {
+                                Res = 1; // Por defecto: Productos
+                        }
+
                         return Res;
                 }
 
