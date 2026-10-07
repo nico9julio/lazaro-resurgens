@@ -281,12 +281,11 @@ namespace Lbl.Articulos
                 {
                         get
                         {
-                                if (Moneda.Cotizacion > 1)
-                                        return Moneda.Cotizacion * this.Pvp;
+                                if (Moneda != null && Moneda.Cotizacion > 0 && Moneda.Cotizacion != 1m)
+                                        return Math.Round(Moneda.Cotizacion * this.Pvp, Lfx.Workspace.Master.CurrentConfig.Moneda.Decimales, MidpointRounding.AwayFromZero);
                                 else
                                         return this.Pvp;
                         }
-                        
                 }
 
                 public DbDateTime FechaPrecio
@@ -498,9 +497,8 @@ namespace Lbl.Articulos
                 {
                         get
                         {
-
-                                if (Moneda.Cotizacion > 1)
-                                        return Moneda.Cotizacion * this.Costo;
+                                if (Moneda != null && Moneda.Cotizacion > 0 && Moneda.Cotizacion != 1m)
+                                        return Math.Round(Moneda.Cotizacion * this.Costo, Lfx.Workspace.Master.CurrentConfig.Moneda.DecimalesCosto, MidpointRounding.AwayFromZero);
                                 else
                                         return this.Costo;
                         }
@@ -510,13 +508,11 @@ namespace Lbl.Articulos
                 {
                         if (this.TipoDeArticulo == Articulos.TiposDeArticulo.ProductoCompuesto && this.Receta != null)
                         {
-                                if (Moneda.Cotizacion > 1)
-                                        return Moneda.Cotizacion * Receta.Costo;
                                 return Receta.Costo;
-                        } else
-                        {       if (Moneda.Cotizacion > 1)
-                                        return Moneda.Cotizacion * this.Costo;
-                                return this.Costo;
+                        }
+                        else
+                        {
+                                return this.CostoLocal;
                         }
                 }
 

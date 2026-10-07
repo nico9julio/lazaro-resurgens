@@ -98,15 +98,15 @@ namespace Lazaro.Base.Util.Comprobantes
                         }
 
                         // Agregar conceptos al comprobante, agrupados por alícuota
-                        if(comprobante.Tipo.Letra == "C") {
+                        if (comprobante.Tipo.Letra == "C") {
                                 // El comprobante C lleva características especiales
-                                ComprobanteSolCae.ImporteNetoGravado = comprobante.Total;
-                        } else if(comprobante.Cliente.ObtenerSituacionIva() == Lbl.Impuestos.SituacionIva.Exento) {
+                                ComprobanteSolCae.ImporteNetoGravado = Math.Round(comprobante.Total, 2, MidpointRounding.AwayFromZero);
+                        } else if (comprobante.Cliente.ObtenerSituacionIva() == Lbl.Impuestos.SituacionIva.Exento) {
                                 // Cliente exento... una sóla alícuota al 0% por el total
                                 ComprobanteSolCae.ImportesAlicuotas.Add(new Afip.Ws.FacturaElectronica.ImporteAlicuota()
                                 {
                                         Alicuota = Afip.Ws.FacturaElectronica.Tablas.Alicuotas.Iva0,
-                                        BaseImponible = comprobante.Total,
+                                        BaseImponible = Math.Round(comprobante.Total, 2, MidpointRounding.AwayFromZero),
                                         Importe = 0m
                                 });
                                 ComprobanteSolCae.ImporteNetoGravado = ComprobanteSolCae.ImportesAlicuotas.ImporteNetoGravado();
@@ -114,12 +114,19 @@ namespace Lazaro.Base.Util.Comprobantes
                                 // Agregar una o más alícuotas de IVA
                                 var Alicuotas = comprobante.AlicuotasUsadas();
                                 foreach (Lbl.Impuestos.Alicuota Alic in Alicuotas.Values) {
-                                        decimal ImporteIva = comprobante.TotalIvaAlicuota(Alic.Id);
-                                        decimal ImporteGravado = comprobante.ImporteGravadoAlicuota(Alic.Id);
+                                        decimal ImporteIva = Math.Round(comprobante.TotalIvaAlicuota(Alic.Id), 2, MidpointRounding.AwayFromZero);
+                                        decimal ImporteGravado = Math.Round(comprobante.ImporteGravadoAlicuota(Alic.Id), 2, MidpointRounding.AwayFromZero);
+
+                                        if (ImporteGravado == 0m && ImporteIva == 0m)
+                                                continue;
+
+                                        int codigoAlicAfip = Lbl.Archivos.Salida.CitiTablas.Alicuotas.ContainsKey(Alic.Id)
+                                                ? Lbl.Archivos.Salida.CitiTablas.Alicuotas[Alic.Id]
+                                                : (int)Afip.Ws.FacturaElectronica.Tablas.Alicuotas.Iva21;
 
                                         ComprobanteSolCae.ImportesAlicuotas.Add(new Afip.Ws.FacturaElectronica.ImporteAlicuota()
                                         {
-                                                Alicuota = (Afip.Ws.FacturaElectronica.Tablas.Alicuotas)Lbl.Archivos.Salida.CitiTablas.Alicuotas[Alic.Id],
+                                                Alicuota = (Afip.Ws.FacturaElectronica.Tablas.Alicuotas)codigoAlicAfip,
                                                 BaseImponible = ImporteGravado,
                                                 Importe = ImporteIva
                                         });
