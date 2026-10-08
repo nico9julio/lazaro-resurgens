@@ -4,6 +4,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.9781] - 2026-10-07
+
+### Added
+- **Monotributo — Sincronización Manual Directa desde el Portal Oficial de ARCA / AFIP:**
+  - **Parser Web Nativo (`ParserWebAfip`):** Consulta y parseo automático de la tabla oficial publicada en `https://www.afip.gob.ar/monotributo/categorias.asp` (con fallback de dominio hacia `arca.gob.ar`), sin requerir registro de cuenta ni API Keys de terceros.
+  - **Extracción Integral de Escalas y Cuotas:** Obtiene para las 11 categorías (de la A a la K) los ingresos brutos máximos anuales vigentes, la cuota mensual de prestaciones de servicios y la cuota mensual de venta de cosas muebles (comercio), junto con la leyenda oficial de vigencia emitida por el organismo fiscal.
+  - **Sincronización Estrictamente Manual:** La consulta web se ejecuta exclusivamente a demanda del usuario desde la ventana de configuración mediante el botón `[🌐 Sincronizar desde Web Oficial AFIP]`, asegurando que no se ejecuten peticiones automáticas en segundo plano ni al iniciar la aplicación.
+  - **Interfaz de Configuración Mejorada:** Rediseño del panel superior de `FormConfigurarEscalasMonotributo` con acceso prioritario a la sincronización oficial directa de AFIP en un clic, conservando la integración alternativa con Servidos Tax API y carga de URL personalizada como métodos de respaldo.
+
 ## [2.0.9780] - 2026-10-07
 
 ### Added
