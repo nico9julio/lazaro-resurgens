@@ -92,6 +92,7 @@ namespace Lbl.Impuestos.Monotributo
 
                                 // 6. Categorías, encuadre y progreso porcentual
                                 EscalasMonotributo escalas = EscalasMonotributo.Instancia;
+                                escalas.Cargar();
                                 resumen.CategoriaActual = escalas.ObtenerCategoriaParaMonto(resumen.FacturadoPeriodoRecat);
                                 resumen.ExcluidoActual = escalas.EstaExcluido(resumen.FacturadoPeriodoRecat);
 
@@ -112,10 +113,81 @@ namespace Lbl.Impuestos.Monotributo
                                 if (resumen.CategoriaProyectada != null)
                                 {
                                         resumen.MargenProyectado = Math.Max(0m, resumen.CategoriaProyectada.IngresosBrutosMaximos - resumen.FacturadoProyectado);
+                                        if (resumen.CategoriaProyectada.IngresosBrutosMaximos > 0m)
+                                        {
+                                                resumen.PorcentajeTopeProyectado = Math.Min(100m, (resumen.FacturadoProyectado / resumen.CategoriaProyectada.IngresosBrutosMaximos) * 100m);
+                                        }
                                 }
                                 else
                                 {
                                         resumen.MargenProyectado = 0m;
+                                        resumen.PorcentajeTopeProyectado = 100m;
+                                }
+
+                                // 6b. Categoría inscripta registrada en AFIP (si está configurada)
+                                string catLetraInscripta = "";
+                                if (Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null)
+                                {
+                                        catLetraInscripta = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Monotributo.CategoriaInscripta", "");
+                                }
+
+                                if (!string.IsNullOrEmpty(catLetraInscripta) && catLetraInscripta != "*" && !catLetraInscripta.Equals("auto", StringComparison.OrdinalIgnoreCase))
+                                {
+                                        string catLimpia = escalas.NormalizarLetra(catLetraInscripta);
+                                        if (!string.IsNullOrEmpty(catLimpia))
+                                        {
+                                                if (catLetraInscripta != catLimpia && Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null)
+                                                {
+                                                        Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Monotributo.CategoriaInscripta", catLimpia);
+                                                }
+                                                catLetraInscripta = catLimpia;
+                                        }
+
+                                        resumen.CategoriaInscripta = escalas.ObtenerCategoria(catLetraInscripta);
+                                        if (resumen.CategoriaInscripta != null)
+                                        {
+                                                resumen.MargenCategoriaInscripta = resumen.CategoriaInscripta.IngresosBrutosMaximos - resumen.FacturadoPeriodoRecat;
+                                                if (resumen.CategoriaInscripta.IngresosBrutosMaximos > 0m)
+                                                {
+                                                        resumen.PorcentajeCategoriaInscripta = (resumen.FacturadoPeriodoRecat / resumen.CategoriaInscripta.IngresosBrutosMaximos) * 100m;
+                                                }
+                                                resumen.SuperoCategoriaInscripta = resumen.FacturadoPeriodoRecat > resumen.CategoriaInscripta.IngresosBrutosMaximos;
+                                                resumen.MargenProyeccionCategoriaInscripta = resumen.CategoriaInscripta.IngresosBrutosMaximos - resumen.FacturadoProyectado;
+
+                                                // 6c. Análisis de baja de categoría u oportunidad de ahorro
+                                                if (resumen.CategoriaProyectada != null)
+                                                {
+                                                        int comp = string.Compare(resumen.CategoriaProyectada.Letra, resumen.CategoriaInscripta.Letra, StringComparison.OrdinalIgnoreCase);
+                                                        if (comp < 0)
+                                                        {
+                                                                resumen.HayOportunidadBaja = true;
+                                                                resumen.CategoriaBaja = resumen.CategoriaProyectada;
+                                                                resumen.MargenParaPasarseDeBajaProyectado = Math.Max(0m, resumen.CategoriaBaja.IngresosBrutosMaximos - resumen.FacturadoProyectado);
+                                                                resumen.MargenParaPasarseDeBajaPeriodo = Math.Max(0m, resumen.CategoriaBaja.IngresosBrutosMaximos - resumen.FacturadoPeriodoRecat);
+                                                                if (resumen.CategoriaBaja.IngresosBrutosMaximos > 0m)
+                                                                {
+                                                                        resumen.PorcentajeConsumoBajaProyectado = Math.Min(100m, (resumen.FacturadoProyectado / resumen.CategoriaBaja.IngresosBrutosMaximos) * 100m);
+                                                                        resumen.PorcentajeConsumoBajaPeriodo = Math.Min(100m, (resumen.FacturadoPeriodoRecat / resumen.CategoriaBaja.IngresosBrutosMaximos) * 100m);
+                                                                }
+                                                                resumen.AhorroEstimadoMensualBaja = Math.Max(0m, resumen.CategoriaInscripta.CuotaServicios - resumen.CategoriaBaja.CuotaServicios);
+                                                        }
+                                                        else
+                                                        {
+                                                                var catInf = escalas.ObtenerCategoriaAnterior(resumen.CategoriaInscripta.Letra);
+                                                                if (catInf != null)
+                                                                {
+                                                                        resumen.CategoriaBaja = catInf;
+                                                                        resumen.MargenParaPasarseDeBajaProyectado = catInf.IngresosBrutosMaximos - resumen.FacturadoProyectado;
+                                                                        resumen.MargenParaPasarseDeBajaPeriodo = catInf.IngresosBrutosMaximos - resumen.FacturadoPeriodoRecat;
+                                                                        if (catInf.IngresosBrutosMaximos > 0m)
+                                                                        {
+                                                                                resumen.PorcentajeConsumoBajaProyectado = (resumen.FacturadoProyectado / catInf.IngresosBrutosMaximos) * 100m;
+                                                                                resumen.PorcentajeConsumoBajaPeriodo = (resumen.FacturadoPeriodoRecat / catInf.IngresosBrutosMaximos) * 100m;
+                                                                        }
+                                                                }
+                                                        }
+                                                }
+                                        }
                                 }
 
                                 // 7. Desglose mensual para los últimos 12 meses

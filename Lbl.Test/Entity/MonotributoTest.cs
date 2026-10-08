@@ -232,5 +232,265 @@ namespace Lbl.Test.Entity
                         Assert.AreEqual(1614446.04m, cats[10].CuotaServicios);
                         Assert.AreEqual(702103.24m, cats[10].CuotaBienes);
                 }
+
+                [Test]
+                public void ConsultaConstanciaAfip_ParsearPersonaFisicaMonotributo()
+                {
+                        string xmlAfip = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:a5=""http://a5.soap.ws.server.puc.sr/"">
+  <soapenv:Body>
+    <a5:getPersona_v2Response>
+      <personaReturn>
+        <datosGenerales>
+          <tipoPersona>FISICA</tipoPersona>
+          <tipoClave>CUIT</tipoClave>
+          <idPersona>20354082050</idPersona>
+          <apellido>PEREZ</apellido>
+          <nombre>JUAN CARLOS</nombre>
+          <estadoClave>ACTIVO</estadoClave>
+          <domicilioFiscal>
+            <direccion>SAN MARTIN 1234 PISO 2 DTO A</direccion>
+            <localidad>ROSARIO</localidad>
+            <codPostal>2000</codPostal>
+            <idProvincia>21</idProvincia>
+            <descripcionProvincia>SANTA FE</descripcionProvincia>
+            <tipoDomicilio>FISCAL</tipoDomicilio>
+          </domicilioFiscal>
+        </datosGenerales>
+        <datosMonotributo>
+          <categoriaMonotributo>B</categoriaMonotributo>
+          <actividadMonotributo>SERVICIOS JURIDICOS</actividadMonotributo>
+        </datosMonotributo>
+      </personaReturn>
+    </a5:getPersona_v2Response>
+  </soapenv:Body>
+</soapenv:Envelope>";
+
+                        var res = ConsultaConstanciaAfip.ParsearRespuestaPersonaA5(xmlAfip, "20354082050");
+
+                        Assert.IsTrue(res.Exito);
+                        Assert.AreEqual("FISICA", res.TipoPersona);
+                        Assert.AreEqual("PEREZ", res.Apellido);
+                        Assert.AreEqual("JUAN CARLOS", res.Nombre);
+                        Assert.AreEqual("35408205", res.NumeroDocumento);
+                        Assert.AreEqual("SAN MARTIN 1234 PISO 2 DTO A", res.Domicilio);
+                        Assert.AreEqual("ROSARIO", res.Localidad);
+                        Assert.AreEqual("2000", res.CodigoPostal);
+                        Assert.AreEqual(21, res.IdProvincia);
+                        Assert.AreEqual("SANTA FE", res.Provincia);
+                        Assert.AreEqual("B", res.Categoria);
+                        Assert.AreEqual(4, res.IdSituacionTributaria); // Responsable Monotributista
+                        Assert.AreEqual("ACTIVO", res.EstadoClave);
+                }
+
+                [Test]
+                public void ConsultaConstanciaAfip_ParsearCategoriaConTextoYActividad()
+                {
+                        string xmlAfip = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:a5=""http://a5.soap.ws.server.puc.sr/"">
+  <soapenv:Body>
+    <a5:getPersona_v2Response>
+      <personaReturn>
+        <datosGenerales>
+          <tipoPersona>FISICA</tipoPersona>
+          <tipoClave>CUIT</tipoClave>
+          <idPersona>27354082050</idPersona>
+          <apellido>GARCIA</apellido>
+          <nombre>MARIA</nombre>
+          <estadoClave>ACTIVO</estadoClave>
+        </datosGenerales>
+        <datosMonotributo>
+          <categoriaMonotributo>E LOCACIONES DE SERVICIOS3920202602</categoriaMonotributo>
+          <actividadMonotributo>LOCACIONES DE SERVICIOS</actividadMonotributo>
+        </datosMonotributo>
+      </personaReturn>
+    </a5:getPersona_v2Response>
+  </soapenv:Body>
+</soapenv:Envelope>";
+
+                        var res = ConsultaConstanciaAfip.ParsearRespuestaPersonaA5(xmlAfip, "27354082050");
+
+                        Assert.IsTrue(res.Exito);
+                        Assert.AreEqual("E", res.Categoria);
+                        Assert.AreEqual(4, res.IdSituacionTributaria);
+                }
+
+                [Test]
+                public void EscalasMonotributo_NormalizarLetraYObtenerCategoriaConTextoComplejo()
+                {
+                        Assert.AreEqual("E", EscalasMonotributo.Instancia.NormalizarLetra("E LOCACIONES DE SERVICIOS3920202602"));
+                        Assert.AreEqual("E", EscalasMonotributo.Instancia.NormalizarLetra("CATEGORIA E"));
+                        Assert.AreEqual("E", EscalasMonotributo.Instancia.NormalizarLetra("CATEGORÍA E"));
+                        Assert.AreEqual("E", EscalasMonotributo.Instancia.NormalizarLetra("CAT. E - LOCACIONES"));
+                        Assert.AreEqual("E", EscalasMonotributo.Instancia.NormalizarLetra("CAT E"));
+                        Assert.AreEqual("E", EscalasMonotributo.Instancia.NormalizarLetra("E"));
+                        Assert.AreEqual("A", EscalasMonotributo.Instancia.NormalizarLetra("A"));
+                        Assert.AreEqual("K", EscalasMonotributo.Instancia.NormalizarLetra("CATEGORIA K"));
+
+                        var cat = EscalasMonotributo.Instancia.ObtenerCategoria("E LOCACIONES DE SERVICIOS3920202602");
+                        Assert.IsNotNull(cat);
+                        Assert.AreEqual("E", cat.Letra);
+
+                        var catAnt = EscalasMonotributo.Instancia.ObtenerCategoriaAnterior("E");
+                        Assert.IsNotNull(catAnt);
+                        Assert.AreEqual("D", catAnt.Letra);
+                        Assert.IsNull(EscalasMonotributo.Instancia.ObtenerCategoriaAnterior("A"));
+                }
+
+                [Test]
+                public void ResumenMonotributo_CalculoOportunidadBaja()
+                {
+                        var escalas = EscalasMonotributo.Instancia;
+                        var catE = escalas.ObtenerCategoria("E");
+                        var catD = escalas.ObtenerCategoria("D");
+                        Assert.IsNotNull(catE);
+                        Assert.IsNotNull(catD);
+
+                        var resumen = new ResumenMonotributo();
+                        resumen.CategoriaInscripta = catE;
+                        resumen.CategoriaProyectada = catD;
+                        resumen.FacturadoProyectado = 25000000m;
+                        resumen.FacturadoPeriodoRecat = 20000000m;
+
+                        resumen.HayOportunidadBaja = true;
+                        resumen.CategoriaBaja = catD;
+                        resumen.MargenParaPasarseDeBajaProyectado = catD.IngresosBrutosMaximos - resumen.FacturadoProyectado;
+                        resumen.MargenParaPasarseDeBajaPeriodo = catD.IngresosBrutosMaximos - resumen.FacturadoPeriodoRecat;
+
+                        resumen.DiasRestantes = 84;
+                        resumen.MargenCategoriaInscripta = catE.IngresosBrutosMaximos - resumen.FacturadoPeriodoRecat;
+
+                        Assert.IsTrue(resumen.HayOportunidadBaja);
+                        Assert.AreEqual("D", resumen.CategoriaBaja.Letra);
+                        Assert.AreEqual(catD.IngresosBrutosMaximos - 25000000m, resumen.MargenParaPasarseDeBajaProyectado);
+                        Assert.AreEqual(3, resumen.MesesRestantes);
+                        Assert.IsTrue(resumen.LimiteMensualCategoriaInscripta > 0m);
+                        Assert.IsTrue(resumen.LimiteMensualBaja > 0m);
+                        Assert.IsTrue(resumen.LimiteDiarioBaja > 0m);
+
+                        string txt = resumen.GenerarTextoInformativo();
+                        Assert.IsTrue(txt.Contains("OPORTUNIDAD DE BAJA DE CATEGORÍA"));
+                        Assert.IsFalse(txt.Contains("ASESORAMIENTO"));
+                        Assert.IsTrue(txt.Contains("AVISO INFORMATIVO"));
+                }
+
+                [Test]
+                public void ConsultaConstanciaAfip_ParsearPersonaJuridicaResponsableInscripto()
+                {
+                        string xmlAfip = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:a5=""http://a5.soap.ws.server.puc.sr/"">
+  <soapenv:Body>
+    <a5:getPersona_v2Response>
+      <personaReturn>
+        <datosGenerales>
+          <tipoPersona>JURIDICA</tipoPersona>
+          <tipoClave>CUIT</tipoClave>
+          <idPersona>30712345678</idPersona>
+          <razonSocial>DISTRIBUIDORA DEL CENTRO S.A.</razonSocial>
+          <estadoClave>ACTIVO</estadoClave>
+          <domicilioFiscal>
+            <direccion>AV CORRIENTES 500 PISO 4</direccion>
+            <localidad>CIUDAD AUTONOMA BUENOS AIRES</localidad>
+            <codPostal>1043</codPostal>
+            <idProvincia>0</idProvincia>
+            <descripcionProvincia>CIUDAD AUTONOMA BUENOS AIRES</descripcionProvincia>
+            <tipoDomicilio>FISCAL</tipoDomicilio>
+          </domicilioFiscal>
+        </datosGenerales>
+        <datosRegimenGeneral>
+          <impuesto>
+            <idImpuesto>30</idImpuesto>
+            <descripcionImpuesto>IVA</descripcionImpuesto>
+            <periodo>201801</periodo>
+          </impuesto>
+          <impuesto>
+            <idImpuesto>10</idImpuesto>
+            <descripcionImpuesto>GANANCIAS SOCIEDADES</descripcionImpuesto>
+            <periodo>201801</periodo>
+          </impuesto>
+        </datosRegimenGeneral>
+      </personaReturn>
+    </a5:getPersona_v2Response>
+  </soapenv:Body>
+</soapenv:Envelope>";
+
+                        var res = ConsultaConstanciaAfip.ParsearRespuestaPersonaA5(xmlAfip, "30712345678");
+
+                        Assert.IsTrue(res.Exito);
+                        Assert.AreEqual("JURIDICA", res.TipoPersona);
+                        Assert.AreEqual("DISTRIBUIDORA DEL CENTRO S.A.", res.RazonSocial);
+                        Assert.IsNull(res.Apellido);
+                        Assert.IsNull(res.Nombre);
+                        Assert.AreEqual("AV CORRIENTES 500 PISO 4", res.Domicilio);
+                        Assert.AreEqual("CIUDAD AUTONOMA BUENOS AIRES", res.Localidad);
+                        Assert.AreEqual("1043", res.CodigoPostal);
+                        Assert.AreEqual(2, res.IdSituacionTributaria); // Responsable Inscripto
+                        Assert.AreEqual("Responsable Inscripto", res.DescripcionSituacion);
+                }
+
+                [Test]
+                public void ConsultaConstanciaAfip_ParsearErrorConstancia()
+                {
+                        string xmlAfip = @"<?xml version=""1.0"" encoding=""utf-8""?>
+<soapenv:Envelope xmlns:soapenv=""http://schemas.xmlsoap.org/soap/envelope/"" xmlns:a5=""http://a5.soap.ws.server.puc.sr/"">
+  <soapenv:Body>
+    <a5:getPersona_v2Response>
+      <personaReturn>
+        <errorConstancia>No existe persona con el CUIT indicado</errorConstancia>
+      </personaReturn>
+    </a5:getPersona_v2Response>
+  </soapenv:Body>
+</soapenv:Envelope>";
+
+                        var res = ConsultaConstanciaAfip.ParsearRespuestaPersonaA5(xmlAfip, "20000000001");
+
+                        Assert.IsFalse(res.Exito);
+                        Assert.IsTrue(res.Mensaje.Contains("No existe persona"));
+                }
+
+                [Test]
+                public void EscalasMonotributo_DetectarDiscrepancias_DetectaCambiosEnTopesYGeneraReporte()
+                {
+                        List<CategoriaMonotributo> actuales = new List<CategoriaMonotributo>()
+                        {
+                                new CategoriaMonotributo("A", 8992597.87m, 26600m, 26600m),
+                                new CategoriaMonotributo("D", 22934610.05m, 45400m, 44300m)
+                        };
+
+                        List<CategoriaMonotributo> nuevas = new List<CategoriaMonotributo>()
+                        {
+                                new CategoriaMonotributo("A", 12009410.45m, 49527.18m, 49527.18m),
+                                new CategoriaMonotributo("D", 30628651.43m, 84612.93m, 82564.81m)
+                        };
+
+                        string reporte;
+                        int diferencias;
+                        bool hayCambios = EscalasMonotributo.DetectarDiscrepancias(actuales, nuevas, out reporte, out diferencias);
+
+                        Assert.IsTrue(hayCambios);
+                        Assert.AreEqual(2, diferencias);
+                        Assert.IsTrue(reporte.Contains("Cat. A:"));
+                        Assert.IsTrue(reporte.Contains("8.992.598"));
+                        Assert.IsTrue(reporte.Contains("12.009.410"));
+                        Assert.IsTrue(reporte.Contains("Cat. D:"));
+                        Assert.IsTrue(reporte.Contains("22.934.610"));
+                        Assert.IsTrue(reporte.Contains("30.628.651"));
+                        Assert.IsTrue(reporte.Contains("+33,5%"));
+                }
+
+                [Test]
+                public void EscalasMonotributo_DetectarDiscrepancias_EscalasIguales_NoReportaDiferencias()
+                {
+                        List<CategoriaMonotributo> actuales = EscalasMonotributo.ObtenerEscalasPredeterminadas();
+                        List<CategoriaMonotributo> nuevas = EscalasMonotributo.ObtenerEscalasPredeterminadas();
+
+                        string reporte;
+                        int diferencias;
+                        bool hayCambios = EscalasMonotributo.DetectarDiscrepancias(actuales, nuevas, out reporte, out diferencias);
+
+                        Assert.IsFalse(hayCambios);
+                        Assert.AreEqual(0, diferencias);
+                        Assert.AreEqual("", reporte);
+                }
         }
 }

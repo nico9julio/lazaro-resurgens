@@ -47,23 +47,23 @@ namespace Lbl.Impuestos.Monotributo
                 }
 
                 /// <summary>
-                /// Devuelve las escalas predeterminadas oficiales de ARCA (ex AFIP) vigentes.
+                /// Devuelve las escalas predeterminadas oficiales de ARCA (ex AFIP) vigentes (desde agosto 2026).
                 /// </summary>
                 public static List<CategoriaMonotributo> ObtenerEscalasPredeterminadas()
                 {
                         return new List<CategoriaMonotributo>()
                         {
-                                new CategoriaMonotributo("A", 8992597.87m, 49527.18m, 49527.18m),
-                                new CategoriaMonotributo("B", 13175201.52m, 56379.08m, 56379.08m),
-                                new CategoriaMonotributo("C", 18473166.15m, 66020.12m, 64530.58m),
-                                new CategoriaMonotributo("D", 22934610.05m, 84612.93m, 82564.81m),
-                                new CategoriaMonotributo("E", 26977793.60m, 119811.45m, 108267.51m),
-                                new CategoriaMonotributo("F", 33809379.57m, 150784.21m, 129930.65m),
-                                new CategoriaMonotributo("G", 40431835.35m, 230312.94m, 158815.05m),
-                                new CategoriaMonotributo("H", 61344853.64m, 522706.68m, 317895.01m),
-                                new CategoriaMonotributo("I", 68664410.05m, 963747.86m, 0m),
-                                new CategoriaMonotributo("J", 78632948.76m, 1167299.76m, 0m),
-                                new CategoriaMonotributo("K", 94805682.90m, 1614446.04m, 702103.24m)
+                                new CategoriaMonotributo("A", 12009410.45m, 49527.18m, 49527.18m),
+                                new CategoriaMonotributo("B", 17595182.74m, 56379.08m, 56379.08m),
+                                new CategoriaMonotributo("C", 24670494.31m, 66020.12m, 64530.58m),
+                                new CategoriaMonotributo("D", 30628651.43m, 84612.93m, 82564.81m),
+                                new CategoriaMonotributo("E", 36028231.33m, 119811.45m, 108267.51m),
+                                new CategoriaMonotributo("F", 45151659.41m, 150784.21m, 129930.65m),
+                                new CategoriaMonotributo("G", 53995798.87m, 230312.94m, 158815.05m),
+                                new CategoriaMonotributo("H", 81924660.37m, 522706.68m, 317895.01m),
+                                new CategoriaMonotributo("I", 91699761.90m, 963747.86m, 474992.78m),
+                                new CategoriaMonotributo("J", 105012519.20m, 1167299.76m, 580793.69m),
+                                new CategoriaMonotributo("K", 126610838.75m, 1614446.04m, 702103.24m)
                         };
                 }
 
@@ -157,12 +157,65 @@ namespace Lbl.Impuestos.Monotributo
                         return montoAnual > topeMaximo;
                 }
 
+                /// <summary>
+                /// Extrae y normaliza la letra de categoría (A hasta K) a partir de un texto arbitrario,
+                /// limpiando descripciones de actividad, códigos o prefijos como "CATEGORIA E", "CAT. E" o "E LOCACIONES DE SERVICIOS3920202602".
+                /// </summary>
+                public string NormalizarLetra(string entrada)
+                {
+                        if (string.IsNullOrWhiteSpace(entrada))
+                                return string.Empty;
+
+                        string s = entrada.Trim().ToUpperInvariant();
+
+                        // 1. Si ya es una sola letra válida (A - K)
+                        if (s.Length == 1 && s[0] >= 'A' && s[0] <= 'K')
+                                return s;
+
+                        // 2. Limpiar prefijos usuales ("CATEGORIA", "CAT.", etc.)
+                        if (s.StartsWith("CATEGORIA") || s.StartsWith("CATEGORÍA"))
+                        {
+                                s = s.Replace("CATEGORÍA", "").Replace("CATEGORIA", "").Trim();
+                        }
+                        if (s.StartsWith("CAT.") || s.StartsWith("CAT"))
+                        {
+                                s = s.Replace("CAT.", "").Replace("CAT", "").Trim();
+                        }
+
+                        s = s.TrimStart(' ', ':', '-', '–', '—', '.', '=');
+
+                        // 3. Si comienza con una letra de categoría (A - K) seguida de espacio, guión, número o fin de cadena
+                        if (s.Length >= 1 && s[0] >= 'A' && s[0] <= 'K')
+                        {
+                                if (s.Length == 1 || !char.IsLetter(s[1]))
+                                {
+                                        return s[0].ToString();
+                                }
+                        }
+
+                        // 4. Buscar mediante expresión regular explícita (ej. "CAT E", "CATEGORIA E", "CAT. E")
+                        var matchCat = System.Text.RegularExpressions.Regex.Match(entrada.ToUpperInvariant(), @"\bCAT(?:EGOR[IÍ]A)?\.?\s*:?\s*([A-K])\b");
+                        if (matchCat.Success && matchCat.Groups.Count > 1)
+                        {
+                                return matchCat.Groups[1].Value;
+                        }
+
+                        return string.Empty;
+                }
+
                 public CategoriaMonotributo ObtenerCategoria(string letra)
                 {
                         if (string.IsNullOrEmpty(letra))
                                 return null;
 
                         string l = letra.Trim().ToUpperInvariant();
+                        if (l.Length > 1)
+                        {
+                                string norm = NormalizarLetra(l);
+                                if (!string.IsNullOrEmpty(norm))
+                                        l = norm;
+                        }
+
                         foreach (var cat in m_Categorias)
                         {
                                 if (cat.Letra == l)
@@ -251,6 +304,30 @@ namespace Lbl.Impuestos.Monotributo
                                                 return ordenadas[i + 1];
                                         else
                                                 return null; // Última categoría
+                                }
+                        }
+                        return null;
+                }
+
+                /// <summary>
+                /// Devuelve la categoría inmediatamente anterior a la indicada (por ejemplo, para E devuelve D), o null si es la primera (A).
+                /// </summary>
+                public CategoriaMonotributo ObtenerCategoriaAnterior(string letra)
+                {
+                        if (string.IsNullOrEmpty(letra))
+                                return null;
+
+                        var ordenadas = ObtenerCategoriasOrdenadas();
+                        string l = letra.Trim().ToUpperInvariant();
+
+                        for (int i = 0; i < ordenadas.Count; i++)
+                        {
+                                if (ordenadas[i].Letra == l)
+                                {
+                                        if (i > 0)
+                                                return ordenadas[i - 1];
+                                        else
+                                                return null; // Primera categoría (A)
                                 }
                         }
                         return null;
@@ -428,6 +505,115 @@ namespace Lbl.Impuestos.Monotributo
                         }
 
                         return false;
+                }
+
+                /// <summary>
+                /// Consulta las escalas de categorías directamente desde la web oficial de ARCA/AFIP sin guardarlas.
+                /// </summary>
+                public bool ConsultarEscalasDesdeWeb(string activityType, out List<CategoriaMonotributo> nuevas, out string infoMetadata, out string mensajeError)
+                {
+                        return ParserWebAfip.ObtenerEscalasDesdeWeb(activityType, out nuevas, out infoMetadata, out mensajeError);
+                }
+
+                /// <summary>
+                /// Compara las categorías actuales del sistema contra las nuevas obtenidas del portal oficial de ARCA / AFIP.
+                /// Devuelve true si existen discrepancias o cambios en los topes o cuotas, junto con un informe detallado de "antes y después".
+                /// </summary>
+                public static bool DetectarDiscrepancias(List<CategoriaMonotributo> actuales, List<CategoriaMonotributo> nuevas, out string reporteComparacion, out int cantidadDiferencias)
+                {
+                        reporteComparacion = "";
+                        cantidadDiferencias = 0;
+
+                        if (nuevas == null || nuevas.Count == 0)
+                                return false;
+
+                        if (actuales == null || actuales.Count == 0)
+                        {
+                                cantidadDiferencias = nuevas.Count;
+                                StringBuilder sbNuevo = new StringBuilder();
+                                foreach (var n in nuevas)
+                                {
+                                        string catLabel = string.Format("Cat. {0}:", n.Letra);
+                                        sbNuevo.AppendLine(string.Format("• {0,-8} {1,14}  ➔  {2,14}", catLabel, "[Sin definir]", FormatoMoneda.Formatear(n.IngresosBrutosMaximos)));
+                                }
+                                reporteComparacion = sbNuevo.ToString();
+                                return true;
+                        }
+
+                        StringBuilder sb = new StringBuilder();
+                        Dictionary<string, CategoriaMonotributo> mapActuales = new Dictionary<string, CategoriaMonotributo>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var act in actuales)
+                        {
+                                if (!string.IsNullOrEmpty(act.Letra))
+                                        mapActuales[act.Letra.Trim()] = act;
+                        }
+
+                        foreach (var nueva in nuevas)
+                        {
+                                if (string.IsNullOrEmpty(nueva.Letra)) continue;
+
+                                CategoriaMonotributo actual;
+                                if (mapActuales.TryGetValue(nueva.Letra.Trim(), out actual))
+                                {
+                                        decimal diffTope = nueva.IngresosBrutosMaximos - actual.IngresosBrutosMaximos;
+                                        if (Math.Abs(diffTope) >= 1m)
+                                        {
+                                                cantidadDiferencias++;
+                                                decimal pct = (actual.IngresosBrutosMaximos > 0m) ? (diffTope / actual.IngresosBrutosMaximos) * 100m : 0m;
+                                                string signo = pct > 0m ? "+" : "";
+                                                string catLabel = string.Format("Cat. {0}:", nueva.Letra);
+                                                sb.AppendLine(string.Format("• {0,-8} {1,14}  ➔  {2,14}  ({3}{4:N1}%)",
+                                                        catLabel,
+                                                        FormatoMoneda.Formatear(actual.IngresosBrutosMaximos),
+                                                        FormatoMoneda.Formatear(nueva.IngresosBrutosMaximos),
+                                                        signo,
+                                                        pct));
+                                        }
+                                }
+                                else
+                                {
+                                        cantidadDiferencias++;
+                                        string catLabel = string.Format("Cat. {0}:", nueva.Letra);
+                                        sb.AppendLine(string.Format("• {0,-8} {1,14}  ➔  {2,14}",
+                                                catLabel,
+                                                "[No existía]",
+                                                FormatoMoneda.Formatear(nueva.IngresosBrutosMaximos)));
+                                }
+                        }
+
+                        // Si no hubo diferencias de topes, verificar cuotas
+                        if (cantidadDiferencias == 0)
+                        {
+                                foreach (var nueva in nuevas)
+                                {
+                                        if (string.IsNullOrEmpty(nueva.Letra)) continue;
+                                        CategoriaMonotributo actual;
+                                        if (mapActuales.TryGetValue(nueva.Letra.Trim(), out actual))
+                                        {
+                                                decimal diffServ = nueva.CuotaServicios - actual.CuotaServicios;
+                                                decimal diffBien = nueva.CuotaBienes - actual.CuotaBienes;
+                                                if (Math.Abs(diffServ) >= 1m || Math.Abs(diffBien) >= 1m)
+                                                {
+                                                        cantidadDiferencias++;
+                                                        decimal actualCuota = Math.Max(actual.CuotaServicios, actual.CuotaBienes);
+                                                        decimal nuevaCuota = Math.Max(nueva.CuotaServicios, nueva.CuotaBienes);
+                                                        decimal diffCuota = nuevaCuota - actualCuota;
+                                                        decimal pct = (actualCuota > 0m) ? (diffCuota / actualCuota) * 100m : 0m;
+                                                        string signo = pct > 0m ? "+" : "";
+                                                        string catLabel = string.Format("Cat. {0} (Cuota):", nueva.Letra);
+                                                        sb.AppendLine(string.Format("• {0,-16} {1,14}  ➔  {2,14}  ({3}{4:N1}%)",
+                                                                catLabel,
+                                                                FormatoMoneda.Formatear(actualCuota),
+                                                                FormatoMoneda.Formatear(nuevaCuota),
+                                                                signo,
+                                                                pct));
+                                                }
+                                        }
+                                }
+                        }
+
+                        reporteComparacion = sb.ToString();
+                        return cantidadDiferencias > 0;
                 }
 
                 /// <summary>

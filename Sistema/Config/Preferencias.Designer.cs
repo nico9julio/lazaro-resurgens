@@ -109,6 +109,7 @@ namespace Lazaro.WinMain.Config
                         this.label12 = new Lui.Forms.Label();
                         this.CheckAfipHomologacion = new Lui.Forms.CheckBox();
                         this.LabelAfipHomoAviso = new Lui.Forms.Label();
+                        this.CheckBarraInformacion = new Lui.Forms.CheckBox();
                         this.FrmAvanzado = new Lui.Forms.Frame();
                         this.buttonPanel1 = new Lui.Forms.ButtonPanel();
                         this.LabelTab1 = new Lui.Forms.Label();
@@ -526,6 +527,16 @@ namespace Lazaro.WinMain.Config
                         this.label30.TabIndex = 20;
                         this.label30.Text = "Recibir actualizaciones";
                         this.label30.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+                        // 
+                        // CheckBarraInformacion
+                        // 
+                        this.CheckBarraInformacion.AutoSize = true;
+                        this.CheckBarraInformacion.Location = new System.Drawing.Point(8, 295);
+                        this.CheckBarraInformacion.Name = "CheckBarraInformacion";
+                        this.CheckBarraInformacion.Size = new System.Drawing.Size(350, 24);
+                        this.CheckBarraInformacion.TabIndex = 22;
+                        this.CheckBarraInformacion.Text = "Mostrar barra de estado e información inferior (Ctrl+B)";
+                        this.CheckBarraInformacion.UseVisualStyleBackColor = true;
                         // 
                         // EntradaModoPantalla
                         // 
@@ -1139,6 +1150,7 @@ namespace Lazaro.WinMain.Config
                         this.FrmAvanzado.Controls.Add(this.EntradaModoPantalla);
                         this.FrmAvanzado.Controls.Add(this.EntradaActualizaciones);
                         this.FrmAvanzado.Controls.Add(this.label30);
+                        this.FrmAvanzado.Controls.Add(this.CheckBarraInformacion);
                         this.FrmAvanzado.Location = new System.Drawing.Point(154, 16);
                         this.FrmAvanzado.Name = "FrmAvanzado";
                         this.FrmAvanzado.Size = new System.Drawing.Size(618, 481);
@@ -1327,5 +1339,6 @@ namespace Lazaro.WinMain.Config
                 private Lui.Forms.Label label38;
                 private Lui.Forms.CheckBox CheckAfipHomologacion;
                 private Lui.Forms.Label LabelAfipHomoAviso;
+                private Lui.Forms.CheckBox CheckBarraInformacion;
         }
 }

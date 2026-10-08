@@ -89,6 +89,7 @@ namespace Lazaro.WinMain.Principal
 
                 private static bool YaPregunteReiniciar = false;
                 private static bool YaSubiEstadisticas = false;
+                private static bool YaVerifiqueEscalasMonotributo = false;
                 private void TimerProgramador_Tick(object sender, EventArgs e)
                 {
                         TimerProgramador.Stop();
@@ -118,6 +119,19 @@ namespace Lazaro.WinMain.Principal
                                         System.Threading.Thread Thr = new System.Threading.Thread(ParamInicio);
                                         Thr.IsBackground = true;
                                         Thr.Start();
+                                }
+
+                                if (YaVerifiqueEscalasMonotributo == false && Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null) {
+                                        YaVerifiqueEscalasMonotributo = true;
+                                        if (Lbl.Sys.Config.Empresa.SituacionTributaria == (int)Lbl.Impuestos.CondicionesFrenteAlIva.ResponsableMonotributista) {
+                                                VerificadorActualizacionesMonotributo.ComprobarEnSegundoPlano(this, forzar: false, onActualizado: () =>
+                                                {
+                                                        if (this.BarraInferior != null && this.BarraInferior.WidgetMonotributo != null)
+                                                        {
+                                                                this.BarraInferior.WidgetMonotributo.IniciarCargaDatos();
+                                                        }
+                                                });
+                                        }
                                 }
 
                                 if (YaPregunteReiniciar == false && Lfx.Updates.Updater.Master != null && Lfx.Updates.Updater.Master.UpdatesPending() && ActiveForm == this) {
@@ -268,6 +282,19 @@ namespace Lazaro.WinMain.Principal
                 {
                         if (BarraInferior != null)
                                 BarraInferior.ActualizarVisibilidadMonotributo();
+                }
+
+                public bool BarraInferiorVisible
+                {
+                        get
+                        {
+                                return BarraInferior != null && BarraInferior.Visible;
+                        }
+                        set
+                        {
+                                if (BarraInferior != null)
+                                        BarraInferior.Visible = value;
+                        }
                 }
 
 

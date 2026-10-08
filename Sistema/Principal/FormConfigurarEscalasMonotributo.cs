@@ -12,6 +12,9 @@ namespace Lazaro.WinMain.Principal
 	{
 		private DataGridView GrillaEscalas;
 		private Button BotonSincronizarWebAfip;
+		private ComboBox ComboCategoriaInscripta;
+		private Button BotonDetectarAfip;
+		private CheckBox CheckConsultarAfipAlAbrir;
 		private TextBox EntradaApiKey;
 		private ComboBox ComboActividad;
 		private Button BotonSincronizarServidos;
@@ -35,7 +38,7 @@ namespace Lazaro.WinMain.Principal
 		private void InitializeComponentCustom()
 		{
 			this.Text = "Configuración de Escalas de Monotributo (ARCA / AFIP)";
-			this.Size = new Size(760, 680);
+			this.Size = new Size(760, 715);
 			this.StartPosition = FormStartPosition.CenterParent;
 			this.FormBorderStyle = FormBorderStyle.FixedDialog;
 			this.MaximizeBox = false;
@@ -46,7 +49,7 @@ namespace Lazaro.WinMain.Principal
 			// Panel Superior de Sincronización e Información
 			Panel panelTop = new Panel();
 			panelTop.Dock = DockStyle.Top;
-			panelTop.Height = 252;
+			panelTop.Height = 316;
 			panelTop.Padding = new Padding(12);
 			panelTop.BackColor = Color.FromArgb(246, 248, 252);
 
@@ -58,19 +61,19 @@ namespace Lazaro.WinMain.Principal
 			EtiquetaExplicacion.ForeColor = Color.FromArgb(50, 60, 75);
 			panelTop.Controls.Add(EtiquetaExplicacion);
 
-			// GroupBox 1: Sincronización Oficial Directa Web AFIP / ARCA (Recomendada - Sin clave)
+			// GroupBox 1: Sincronización Oficial Directa Web AFIP / ARCA y Situación Registrada
 			GroupBox gbWebAfip = new GroupBox();
-			gbWebAfip.Text = " Sincronización oficial directa desde la Web de ARCA / AFIP (Recomendado — Sin API Key) ";
+			gbWebAfip.Text = " Sincronización oficial de ARCA / AFIP y Datos del Contribuyente ";
 			gbWebAfip.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
 			gbWebAfip.ForeColor = Color.FromArgb(20, 80, 45);
 			gbWebAfip.Location = new Point(12, 40);
-			gbWebAfip.Size = new Size(715, 68);
+			gbWebAfip.Size = new Size(715, 134);
 
 			BotonSincronizarWebAfip = new Button();
-			BotonSincronizarWebAfip.Text = "🌐 Sincronizar desde Web Oficial AFIP";
-			BotonSincronizarWebAfip.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+			BotonSincronizarWebAfip.Text = "🌐 Sincronizar escalas desde Web AFIP";
+			BotonSincronizarWebAfip.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
 			BotonSincronizarWebAfip.Location = new Point(12, 22);
-			BotonSincronizarWebAfip.Size = new Size(310, 34);
+			BotonSincronizarWebAfip.Size = new Size(270, 32);
 			BotonSincronizarWebAfip.BackColor = Color.FromArgb(28, 120, 60);
 			BotonSincronizarWebAfip.ForeColor = Color.White;
 			BotonSincronizarWebAfip.UseVisualStyleBackColor = false;
@@ -79,12 +82,72 @@ namespace Lazaro.WinMain.Principal
 			gbWebAfip.Controls.Add(BotonSincronizarWebAfip);
 
 			Label lblWebInfo = new Label();
-			lblWebInfo.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
+			lblWebInfo.Font = new Font("Segoe UI", 8F, FontStyle.Regular);
 			lblWebInfo.ForeColor = Color.FromArgb(60, 75, 70);
-			lblWebInfo.Location = new Point(332, 22);
-			lblWebInfo.Size = new Size(370, 36);
-			lblWebInfo.Text = "Descarga en un clic la tabla oficial de afip.gob.ar/monotributo/categorias.asp.\r\nActualización manual y directa sin requerir registro ni API Key.";
+			lblWebInfo.Location = new Point(290, 22);
+			lblWebInfo.Size = new Size(415, 32);
+			lblWebInfo.Text = "Descarga los topes de afip.gob.ar/monotributo/categorias.asp en 1 clic.\r\nActualización manual directa sin requerir registro ni clave.";
 			gbWebAfip.Controls.Add(lblWebInfo);
+
+			Label lblCatInsc = new Label();
+			lblCatInsc.Text = "Categoría registrada:";
+			lblCatInsc.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
+			lblCatInsc.ForeColor = Color.FromArgb(40, 50, 60);
+			lblCatInsc.Location = new Point(12, 64);
+			lblCatInsc.Size = new Size(116, 24);
+			lblCatInsc.TextAlign = ContentAlignment.MiddleLeft;
+			gbWebAfip.Controls.Add(lblCatInsc);
+
+			ComboCategoriaInscripta = new ComboBox();
+			ComboCategoriaInscripta.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
+			ComboCategoriaInscripta.DropDownStyle = ComboBoxStyle.DropDown;
+			ComboCategoriaInscripta.Items.Add("Automática (según facturación)");
+			string[] letras = new string[] { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K" };
+			foreach (string l in letras)
+			{
+				ComboCategoriaInscripta.Items.Add("Categoría " + l);
+			}
+			ComboCategoriaInscripta.Location = new Point(130, 65);
+			ComboCategoriaInscripta.Size = new Size(150, 22);
+			gbWebAfip.Controls.Add(ComboCategoriaInscripta);
+
+			BotonDetectarAfip = new Button();
+			BotonDetectarAfip.Text = "🔍 Detectar en ARCA / AFIP";
+			BotonDetectarAfip.Font = new Font("Segoe UI", 8.25F, FontStyle.Bold);
+			BotonDetectarAfip.Location = new Point(286, 63);
+			BotonDetectarAfip.Size = new Size(175, 26);
+			BotonDetectarAfip.Cursor = Cursors.Hand;
+			BotonDetectarAfip.Click += new EventHandler(BotonDetectarAfip_Click);
+			gbWebAfip.Controls.Add(BotonDetectarAfip);
+
+			Label lblAct = new Label();
+			lblAct.Text = "Actividad:";
+			lblAct.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
+			lblAct.ForeColor = Color.FromArgb(40, 50, 60);
+			lblAct.Location = new Point(470, 64);
+			lblAct.Size = new Size(58, 24);
+			lblAct.TextAlign = ContentAlignment.MiddleLeft;
+			gbWebAfip.Controls.Add(lblAct);
+
+			ComboActividad = new ComboBox();
+			ComboActividad.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
+			ComboActividad.DropDownStyle = ComboBoxStyle.DropDownList;
+			ComboActividad.Items.Add("Servicios");
+			ComboActividad.Items.Add("Comercio / Cosas Muebles");
+			string tipoGuardado = Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null ?
+				Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Monotributo.TipoActividad", "servicios") : "servicios";
+			ComboActividad.SelectedIndex = (tipoGuardado == "comercio") ? 1 : 0;
+			ComboActividad.Location = new Point(532, 65);
+			ComboActividad.Size = new Size(170, 22);
+			gbWebAfip.Controls.Add(ComboActividad);
+
+			CheckConsultarAfipAlAbrir = new CheckBox();
+			CheckConsultarAfipAlAbrir.Text = "Consultar automáticamente categoría actual en ARCA / AFIP por WebService al abrir detalle";
+			CheckConsultarAfipAlAbrir.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
+			CheckConsultarAfipAlAbrir.ForeColor = Color.FromArgb(30, 45, 60);
+			CheckConsultarAfipAlAbrir.Location = new Point(12, 100);
+			CheckConsultarAfipAlAbrir.Size = new Size(600, 22);
+			gbWebAfip.Controls.Add(CheckConsultarAfipAlAbrir);
 
 			panelTop.Controls.Add(gbWebAfip);
 
@@ -93,13 +156,13 @@ namespace Lazaro.WinMain.Principal
 			gbServidos.Text = " Alternativas: Servidos Developers Tax API (servidos.ar) o URL externa ";
 			gbServidos.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
 			gbServidos.ForeColor = Color.FromArgb(40, 65, 110);
-			gbServidos.Location = new Point(12, 112);
-			gbServidos.Size = new Size(715, 104);
+			gbServidos.Location = new Point(12, 182);
+			gbServidos.Size = new Size(715, 96);
 
 			LinkServidosDev = new LinkLabel();
 			LinkServidosDev.Text = "Obtener API Key gratuita (500 peticiones/mes) en servidos.ar/developers";
 			LinkServidosDev.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
-			LinkServidosDev.Location = new Point(12, 20);
+			LinkServidosDev.Location = new Point(12, 16);
 			LinkServidosDev.Size = new Size(420, 16);
 			LinkServidosDev.LinkClicked += (s, e) =>
 			{
@@ -115,45 +178,24 @@ namespace Lazaro.WinMain.Principal
 			lblKey.Text = "API Key:";
 			lblKey.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
 			lblKey.ForeColor = Color.FromArgb(40, 50, 60);
-			lblKey.Location = new Point(12, 40);
+			lblKey.Location = new Point(12, 36);
 			lblKey.Size = new Size(55, 22);
 			lblKey.TextAlign = ContentAlignment.MiddleLeft;
 			gbServidos.Controls.Add(lblKey);
 
 			EntradaApiKey = new TextBox();
 			EntradaApiKey.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
-			EntradaApiKey.Location = new Point(68, 40);
+			EntradaApiKey.Location = new Point(68, 36);
 			EntradaApiKey.Size = new Size(170, 22);
 			EntradaApiKey.Text = Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null ?
 				Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Monotributo.ServidosApiKey", "") : "";
 			gbServidos.Controls.Add(EntradaApiKey);
 
-			Label lblAct = new Label();
-			lblAct.Text = "Actividad:";
-			lblAct.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
-			lblAct.ForeColor = Color.FromArgb(40, 50, 60);
-			lblAct.Location = new Point(244, 40);
-			lblAct.Size = new Size(60, 22);
-			lblAct.TextAlign = ContentAlignment.MiddleLeft;
-			gbServidos.Controls.Add(lblAct);
-
-			ComboActividad = new ComboBox();
-			ComboActividad.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
-			ComboActividad.DropDownStyle = ComboBoxStyle.DropDownList;
-			ComboActividad.Items.Add("Servicios");
-			ComboActividad.Items.Add("Comercio / Cosas Muebles");
-			string tipoGuardado = Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null ?
-				Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Monotributo.TipoActividad", "servicios") : "servicios";
-			ComboActividad.SelectedIndex = (tipoGuardado == "comercio") ? 1 : 0;
-			ComboActividad.Location = new Point(306, 40);
-			ComboActividad.Size = new Size(140, 22);
-			gbServidos.Controls.Add(ComboActividad);
-
 			BotonSincronizarServidos = new Button();
 			BotonSincronizarServidos.Text = "Sincronizar Servidos";
 			BotonSincronizarServidos.Font = new Font("Segoe UI", 8.25F, FontStyle.Bold);
-			BotonSincronizarServidos.Location = new Point(454, 38);
-			BotonSincronizarServidos.Size = new Size(135, 26);
+			BotonSincronizarServidos.Location = new Point(244, 34);
+			BotonSincronizarServidos.Size = new Size(145, 26);
 			BotonSincronizarServidos.BackColor = Color.FromArgb(41, 128, 185);
 			BotonSincronizarServidos.ForeColor = Color.White;
 			BotonSincronizarServidos.UseVisualStyleBackColor = false;
@@ -164,14 +206,14 @@ namespace Lazaro.WinMain.Principal
 			lblUrl.Text = "URL JSON:";
 			lblUrl.Font = new Font("Segoe UI", 8F);
 			lblUrl.ForeColor = Color.FromArgb(80, 90, 100);
-			lblUrl.Location = new Point(12, 70);
+			lblUrl.Location = new Point(12, 64);
 			lblUrl.Size = new Size(65, 22);
 			lblUrl.TextAlign = ContentAlignment.MiddleLeft;
 			gbServidos.Controls.Add(lblUrl);
 
 			EntradaUrl = new TextBox();
 			EntradaUrl.Font = new Font("Segoe UI", 8F);
-			EntradaUrl.Location = new Point(78, 70);
+			EntradaUrl.Location = new Point(78, 64);
 			EntradaUrl.Size = new Size(510, 22);
 			EntradaUrl.Text = Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null ?
 				Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Monotributo.UrlApiEscalas", "") : "";
@@ -180,7 +222,7 @@ namespace Lazaro.WinMain.Principal
 			BotonDescargarUrl = new Button();
 			BotonDescargarUrl.Text = "Cargar URL";
 			BotonDescargarUrl.Font = new Font("Segoe UI", 8F);
-			BotonDescargarUrl.Location = new Point(598, 69);
+			BotonDescargarUrl.Location = new Point(598, 63);
 			BotonDescargarUrl.Size = new Size(105, 24);
 			BotonDescargarUrl.BackColor = Color.FromArgb(235, 240, 248);
 			BotonDescargarUrl.Click += new EventHandler(BotonDescargarUrl_Click);
@@ -191,7 +233,7 @@ namespace Lazaro.WinMain.Principal
 			LabelEstadoSync = new Label();
 			LabelEstadoSync.Font = new Font("Segoe UI", 8.25F, FontStyle.Italic);
 			LabelEstadoSync.ForeColor = Color.FromArgb(70, 85, 100);
-			LabelEstadoSync.Location = new Point(12, 222);
+			LabelEstadoSync.Location = new Point(12, 254);
 			LabelEstadoSync.Size = new Size(715, 22);
 			string vigencia = EscalasMonotributo.UltimaVigenciaMetadata;
 			LabelEstadoSync.Text = !string.IsNullOrEmpty(vigencia) ? ("Estado: " + vigencia) : "Estado: Escalas vigentes oficiales de ARCA cargadas.";
@@ -292,6 +334,79 @@ namespace Lazaro.WinMain.Principal
 			if (!string.IsNullOrEmpty(meta))
 			{
 				LabelEstadoSync.Text = "Estado: " + meta;
+			}
+
+			string catGuardada = Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null ?
+				Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Monotributo.CategoriaInscripta", "auto") : "auto";
+			if (string.IsNullOrEmpty(catGuardada) || catGuardada == "*" || catGuardada.Equals("auto", StringComparison.OrdinalIgnoreCase))
+			{
+				ComboCategoriaInscripta.SelectedIndex = 0;
+			}
+			else
+			{
+				string catNorm = EscalasMonotributo.Instancia.NormalizarLetra(catGuardada);
+				if (!string.IsNullOrEmpty(catNorm)) catGuardada = catNorm;
+				char c = char.ToUpperInvariant(catGuardada[0]);
+				int idx = (c - 'A') + 1;
+				if (idx >= 1 && idx < ComboCategoriaInscripta.Items.Count)
+					ComboCategoriaInscripta.SelectedIndex = idx;
+				else
+					ComboCategoriaInscripta.Text = "Categoría " + catGuardada;
+			}
+
+			bool autoCheck = Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null ?
+				Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<bool>("Sistema.Monotributo.ConsultarAfipAlAbrir", true) : true;
+			CheckConsultarAfipAlAbrir.Checked = autoCheck;
+		}
+
+		private void BotonDetectarAfip_Click(object sender, EventArgs e)
+		{
+			Cursor = Cursors.WaitCursor;
+			try
+			{
+				var res = Lbl.Impuestos.Monotributo.ConsultaConstanciaAfip.Consultar();
+				if (res.Exito && !string.IsNullOrEmpty(res.Categoria))
+				{
+					string catLimpia = EscalasMonotributo.Instancia.NormalizarLetra(res.Categoria);
+					if (string.IsNullOrEmpty(catLimpia)) catLimpia = res.Categoria;
+
+					char c = char.ToUpperInvariant(catLimpia[0]);
+					int idx = (c - 'A') + 1;
+					if (idx >= 1 && idx < ComboCategoriaInscripta.Items.Count)
+						ComboCategoriaInscripta.SelectedIndex = idx;
+					else
+						ComboCategoriaInscripta.Text = "Categoría " + catLimpia;
+
+					if (Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null)
+					{
+						Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Monotributo.CategoriaInscripta", catLimpia);
+					}
+
+					string titular = !string.IsNullOrEmpty(res.RazonSocial) ? (" para " + res.RazonSocial) : "";
+					MessageBox.Show(this,
+						string.Format("Se consultó el Web Service de ARCA / AFIP exitosamente{0}.\r\n\r\nCategoría actual detectada: Categoría {1}\r\nCUIT: {2}",
+							titular, catLimpia, res.CuitConsultado),
+						"Consulta Exitosa - ARCA / AFIP", MessageBoxButtons.OK, MessageBoxIcon.Information);
+				}
+				else
+				{
+					if (res.RequierePermisoWebservice)
+					{
+						MessageBox.Show(this,
+							res.Mensaje + "\r\n\r\n" + Lbl.Impuestos.Monotributo.ResultadoConsultaConstancia.ObtenerGuiaConfiguracionPermiso(),
+							"Permiso Requerido en ARCA / AFIP", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+					}
+					else
+					{
+						MessageBox.Show(this,
+							res.Mensaje + "\r\n\r\nPuede ingresar o seleccionar la categoría manualmente en el desplegable.",
+							"Consulta Web Service AFIP", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+					}
+				}
+			}
+			finally
+			{
+				Cursor = Cursors.Default;
 			}
 		}
 
@@ -467,6 +582,23 @@ namespace Lazaro.WinMain.Principal
 			{
 				Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Monotributo.ServidosApiKey", EntradaApiKey.Text.Trim());
 				Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Monotributo.TipoActividad", ComboActividad.SelectedIndex == 1 ? "comercio" : "servicios");
+				Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Monotributo.ConsultarAfipAlAbrir", CheckConsultarAfipAlAbrir.Checked ? "1" : "0");
+				string catSeleccionada = "auto";
+				if (ComboCategoriaInscripta.SelectedIndex > 0)
+				{
+					catSeleccionada = ((char)('A' + ComboCategoriaInscripta.SelectedIndex - 1)).ToString();
+				}
+				else if (!string.IsNullOrWhiteSpace(ComboCategoriaInscripta.Text))
+				{
+					string t = ComboCategoriaInscripta.Text.Trim().ToUpper();
+					if (t.StartsWith("CATEGORIA") || t.StartsWith("CATEGORÍA"))
+						t = t.Replace("CATEGORIA", "").Replace("CATEGORÍA", "").Trim();
+					if (t.StartsWith("CAT"))
+						t = t.Replace("CAT", "").Replace(".", "").Trim();
+					if (t.Length == 1 && t[0] >= 'A' && t[0] <= 'K')
+						catSeleccionada = t;
+				}
+				Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Monotributo.CategoriaInscripta", catSeleccionada);
 				Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Monotributo.UrlApiEscalas", EntradaUrl.Text.Trim());
 			}
 

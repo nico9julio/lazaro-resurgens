@@ -29,6 +29,7 @@ namespace Lfc.Personas
                         this.EntradaApellido = new Lui.Forms.TextBox();
                         this.EntradaNombre = new Lui.Forms.TextBox();
                         this.EntradaClaveTributaria = new Lui.Forms.TextBox();
+                        this.BotonConsultarAfip = new Lui.Forms.Button();
                         this.EntradaRazonSocial = new Lui.Forms.TextBox();
                         this.Label10 = new Lui.Forms.Label();
                         this.Label9 = new Lui.Forms.Label();
@@ -187,9 +188,23 @@ namespace Lfc.Personas
                         this.EntradaClaveTributaria.Location = new System.Drawing.Point(129, 104);
                         this.EntradaClaveTributaria.MaxLength = 50;
                         this.EntradaClaveTributaria.Name = "EntradaClaveTributaria";
-                        this.EntradaClaveTributaria.Size = new System.Drawing.Size(142, 24);
+                        this.EntradaClaveTributaria.Size = new System.Drawing.Size(134, 24);
                         this.EntradaClaveTributaria.TabIndex = 2;
                         this.EntradaClaveTributaria.Leave += new System.EventHandler(this.EntradaClaveTributaria_Leave);
+                        // 
+                        // BotonConsultarAfip
+                        // 
+                        this.BotonConsultarAfip.DialogResult = System.Windows.Forms.DialogResult.None;
+                        this.BotonConsultarAfip.Image = null;
+                        this.BotonConsultarAfip.ImagePos = Lui.Forms.ImagePositions.Top;
+                        this.BotonConsultarAfip.Location = new System.Drawing.Point(267, 103);
+                        this.BotonConsultarAfip.Name = "BotonConsultarAfip";
+                        this.BotonConsultarAfip.Size = new System.Drawing.Size(74, 26);
+                        this.BotonConsultarAfip.SubLabelPos = Lui.Forms.SubLabelPositions.None;
+                        this.BotonConsultarAfip.Subtext = "";
+                        this.BotonConsultarAfip.TabIndex = 3;
+                        this.BotonConsultarAfip.Text = "AFIP";
+                        this.BotonConsultarAfip.Click += new System.EventHandler(this.BotonConsultarAfip_Click);
                         // 
                         // EntradaRazonSocial
                         // 
@@ -364,6 +379,7 @@ namespace Lfc.Personas
                         this.PanelD1.Controls.Add(this.label27);
                         this.PanelD1.Controls.Add(this.EntradaRazonSocial);
                         this.PanelD1.Controls.Add(this.EntradaClaveTributaria);
+                        this.PanelD1.Controls.Add(this.BotonConsultarAfip);
                         this.PanelD1.Controls.Add(this.EntradaSituacion);
                         this.PanelD1.Controls.Add(this.EntradaTipoFac);
                         this.PanelD1.Controls.Add(this.Label3);
@@ -893,6 +909,7 @@ namespace Lfc.Personas
                 internal Lui.Forms.Label Label11;
                 internal Lui.Forms.Frame PanelI1;
                 internal Lui.Forms.Frame PanelD1;
+                internal Lui.Forms.Button BotonConsultarAfip;
                 internal Lcc.Entrada.CodigoDetalle EntradaSituacion;
                 internal Lui.Forms.Label Label12;
                 internal Lui.Forms.Label Label15;

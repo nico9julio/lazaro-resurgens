@@ -263,6 +263,8 @@
     <Compile Include="Principal\FormConfigurarEscalasMonotributo.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Principal\IconosMonotributo.cs" />
+    <Compile Include="Principal\VerificadorActualizacionesMonotributo.cs" />
     <Compile Include="Principal\Inicio.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -203,6 +203,7 @@ namespace Lfc.Personas
                         else
                                 EntradaClaveTributaria.Text = "";
                         EntradaClaveTributaria.Enabled = PermitirEdicionAvanzada;
+                        BotonConsultarAfip.Enabled = PermitirEdicionAvanzada;
                         EntradaSituacion.Elemento = Cliente.SituacionTributaria;
                         EntradaSituacion.Enabled = PermitirEdicionAvanzada;
                         if (Cliente.FacturaPreferida == null || Cliente.FacturaPreferida.Length == 0)
@@ -307,6 +308,166 @@ namespace Lfc.Personas
                                         EntradaClaveTributaria.ErrorText = "La CUIT ingresada no es válida.";
                                 else
                                         EntradaClaveTributaria.ErrorText = null;
+                        }
+                }
+
+
+                private void BotonConsultarAfip_Click(object sender, EventArgs e)
+                {
+                        string cuitTexto = EntradaClaveTributaria.Text != null ? EntradaClaveTributaria.Text.Trim() : "";
+                        if (string.IsNullOrEmpty(cuitTexto))
+                        {
+                                Lui.Forms.MessageBox.Show("Por favor ingrese un número de CUIT para consultar en ARCA / AFIP.", "Consulta AFIP");
+                                EntradaClaveTributaria.Focus();
+                                return;
+                        }
+
+                        string cuitLimpio = cuitTexto.Replace("-", "").Replace(".", "").Replace(" ", "").Replace("/", "").Trim();
+                        if (cuitLimpio.Length != 11)
+                        {
+                                Lui.Forms.MessageBox.Show("El número de CUIT debe tener 11 dígitos numéricos.", "Consulta AFIP");
+                                EntradaClaveTributaria.Focus();
+                                return;
+                        }
+
+                        if (!Lbl.Personas.Claves.Cuit.EsValido(cuitLimpio))
+                        {
+                                Lui.Forms.MessageBox.Show("El número de CUIT ingresado no es válido según su dígito verificador.", "Consulta AFIP");
+                                EntradaClaveTributaria.Focus();
+                                return;
+                        }
+
+                        Cursor prevCursor = this.Cursor;
+                        this.Cursor = Cursors.WaitCursor;
+                        try
+                        {
+                                var res = Lbl.Impuestos.Monotributo.ConsultaConstanciaAfip.ConsultarContribuyente(cuitLimpio);
+
+                                if (!res.Exito)
+                                {
+                                        if (res.RequierePermisoWebservice)
+                                        {
+                                                Lui.Forms.MessageBox.Show(
+                                                        res.Mensaje + "\r\n\r\n" + Lbl.Impuestos.Monotributo.ResultadoConsultaConstancia.ObtenerGuiaConfiguracionPermiso(),
+                                                        "Permiso en AFIP requerido");
+                                        }
+                                        else
+                                        {
+                                                Lui.Forms.MessageBox.Show(
+                                                        res.Mensaje ?? "No se obtuvieron datos para el CUIT consultado en ARCA / AFIP.",
+                                                        "Consulta AFIP");
+                                        }
+                                        return;
+                                }
+
+                                // 1. Formatear y asignar CUIT con guiones
+                                EntradaClaveTributaria.Text = cuitLimpio.Substring(0, 2) + "-" + cuitLimpio.Substring(2, 8) + "-" + cuitLimpio.Substring(10, 1);
+                                EntradaClaveTributaria.ErrorText = null;
+
+                                // 2. Completar datos según tipo de persona (Física vs Jurídica)
+                                bool esJuridica = string.Equals(res.TipoPersona, "JURIDICA", StringComparison.OrdinalIgnoreCase);
+
+                                if (esJuridica)
+                                {
+                                        EntradaRazonSocial.Text = (res.RazonSocial ?? "").Trim();
+                                        EntradaApellido.Text = "";
+                                        EntradaNombre.Text = "";
+                                        EntradaNumDoc.Text = "";
+                                }
+                                else
+                                {
+                                        EntradaRazonSocial.Text = "";
+                                        EntradaApellido.Text = (res.Apellido ?? "").Trim();
+                                        EntradaNombre.Text = (res.Nombre ?? "").Trim();
+
+                                        if (Lbl.Sys.Config.Pais.ClavePersonasFisicas != null)
+                                        {
+                                                EntradaTipoDoc.Elemento = Lbl.Sys.Config.Pais.ClavePersonasFisicas;
+                                        }
+
+                                        if (!string.IsNullOrWhiteSpace(res.NumeroDocumento))
+                                        {
+                                                EntradaNumDoc.Text = res.NumeroDocumento;
+                                        }
+                                        else if (cuitLimpio.Length == 11)
+                                        {
+                                                EntradaNumDoc.Text = cuitLimpio.Substring(2, 8).TrimStart('0');
+                                        }
+                                }
+
+                                // Regenerar título/nombre visible del formulario
+                                GenerarNombreVisible(null, null);
+
+                                // 3. Domicilio fiscal
+                                if (!string.IsNullOrWhiteSpace(res.Domicilio))
+                                {
+                                        EntradaDomicilio.Text = res.Domicilio.Trim();
+                                }
+
+                                // 4. Localidad
+                                if (this.Connection != null)
+                                {
+                                        int idCiudad = 0;
+                                        if (!string.IsNullOrWhiteSpace(res.CodigoPostal))
+                                        {
+                                                string cpSoloNum = System.Text.RegularExpressions.Regex.Replace(res.CodigoPostal, @"\D", "");
+                                                string sqlCp = "SELECT id_ciudad FROM ciudades WHERE cp = '" + this.Connection.EscapeString(res.CodigoPostal.Trim()) + "'";
+                                                if (!string.IsNullOrEmpty(cpSoloNum) && cpSoloNum != res.CodigoPostal.Trim())
+                                                {
+                                                        sqlCp += " OR cp = '" + this.Connection.EscapeString(cpSoloNum) + "'";
+                                                }
+                                                sqlCp += " LIMIT 1";
+
+                                                var rowCp = this.Connection.FirstRowFromSelect(sqlCp);
+                                                if (rowCp != null && rowCp["id_ciudad"] != null)
+                                                {
+                                                        idCiudad = System.Convert.ToInt32(rowCp["id_ciudad"]);
+                                                }
+                                        }
+
+                                        if (idCiudad == 0 && !string.IsNullOrWhiteSpace(res.Localidad))
+                                        {
+                                                string sqlLoc = "SELECT id_ciudad FROM ciudades WHERE nombre LIKE '%" + this.Connection.EscapeString(res.Localidad.Trim()) + "%' LIMIT 1";
+                                                var rowLoc = this.Connection.FirstRowFromSelect(sqlLoc);
+                                                if (rowLoc != null && rowLoc["id_ciudad"] != null)
+                                                {
+                                                        idCiudad = System.Convert.ToInt32(rowLoc["id_ciudad"]);
+                                                }
+                                        }
+
+                                        if (idCiudad > 0)
+                                        {
+                                                EntradaLocalidad.Elemento = new Lbl.Entidades.Localidad(this.Connection, idCiudad);
+                                        }
+                                }
+
+                                // 5. Condición fiscal / Situación tributaria
+                                if (res.IdSituacionTributaria > 0 && this.Connection != null)
+                                {
+                                        EntradaSituacion.Elemento = new Lbl.Impuestos.SituacionTributaria(this.Connection, res.IdSituacionTributaria);
+                                        EntradaSituacion.ErrorText = "";
+                                }
+
+                                // Notificar resultado amigable al usuario
+                                string detalle = esJuridica ?
+                                        ("Razón Social: " + (res.RazonSocial ?? "")) :
+                                        ("Nombre: " + ((res.Apellido ?? "") + " " + (res.Nombre ?? "")).Trim());
+                                if (!string.IsNullOrEmpty(res.DescripcionSituacion))
+                                        detalle += "\r\nCondición: " + res.DescripcionSituacion;
+                                if (!string.IsNullOrEmpty(res.Domicilio))
+                                        detalle += "\r\nDomicilio: " + res.Domicilio;
+
+                                Lui.Forms.MessageBox.Show(
+                                        "Datos obtenidos de ARCA / AFIP:\r\n\r\n" + detalle,
+                                        "Consulta AFIP");
+                        }
+                        catch (Exception ex)
+                        {
+                                Lui.Forms.MessageBox.Show("Error al consultar datos en ARCA / AFIP: " + ex.Message, "Error AFIP");
+                        }
+                        finally
+                        {
+                                this.Cursor = prevCursor;
                         }
                 }
 

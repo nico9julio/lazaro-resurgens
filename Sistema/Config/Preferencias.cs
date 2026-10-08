@@ -98,6 +98,7 @@ namespace Lazaro.WinMain.Config
                         EntradaBackup.TextKey = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Backup.Tipo", "0");
                         EntradaModoPantalla.TextKey = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Apariencia.ModoPantalla", "maximizado");
                         EntradaActualizaciones.TextKey = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Actualizaciones.Nivel", "stable");
+                        CheckBarraInformacion.Checked = Lfx.Workspace.Master.CurrentConfig.ReadLocalSettingInt("Sistema", "Apariencia.BarraInformacion", 1) != 0;
 
                         EntradaPV.Text = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Documentos.PV", "1");
                         EntradaPVABC.Text = Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Documentos.ABC.PV", "0");
@@ -195,6 +196,10 @@ namespace Lazaro.WinMain.Config
                         else
                                 Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Apariencia.ModoPantalla", EntradaModoPantalla.TextKey, Lfx.Environment.SystemInformation.MachineName);
                         Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Actualizaciones.Nivel", EntradaActualizaciones.TextKey);
+                        Lfx.Workspace.Master.CurrentConfig.WriteLocalSetting("Sistema", "Apariencia.BarraInformacion", CheckBarraInformacion.Checked ? 1 : 0);
+                        if (Aplicacion.FormularioPrincipal != null) {
+                                Aplicacion.FormularioPrincipal.BarraInferiorVisible = CheckBarraInformacion.Checked;
+                        }
 
                         if (this.Logo.ImagenCambio) {
                                 if (this.Logo.Existe == false) {

@@ -235,6 +235,7 @@
     <Compile Include="Impuestos\Monotributo\CalculadorMonotributo.cs" />
     <Compile Include="Impuestos\Monotributo\FormatoMoneda.cs" />
     <Compile Include="Impuestos\Monotributo\ParserWebAfip.cs" />
+    <Compile Include="Impuestos\Monotributo\ConsultaConstanciaAfip.cs" />
     <Compile Include="ListaIds.cs" />
     <Compile Include="Notificaciones\UsuarioConectado.cs" />
     <Compile Include="Pagos\Cupon.cs" />
