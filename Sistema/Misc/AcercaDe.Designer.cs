@@ -276,7 +276,7 @@ namespace Lazaro.WinMain.Misc
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(180, 25);
             this.label1.TabIndex = 72;
-            this.label1.Text = "Resurgens v2.0.9781";
+            this.label1.Text = "Resurgens v2.0.9782";
             this.label1.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
             this.label1.Click += new System.EventHandler(this.label1_Click);
             // 

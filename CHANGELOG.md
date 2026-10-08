@@ -4,6 +4,28 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 
 El formato se basa en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.9782] - 2026-10-08
+
+### Added
+- **Monotributo — Detección Automática de Discrepancias y Cuadro Comparativo Antes/Después:**
+  - **Coordinador Asíncrono en Segundo Plano (`VerificadorActualizacionesMonotributo`):** Verificación no bloqueante en hilo secundario de las escalas oficiales publicadas por ARCA / AFIP sin demorar el inicio del sistema ni congelar la pantalla.
+  - **Doble Disparador Inteligente:** Comprobación diferida tras iniciar la aplicación (`Inicio.cs`) y al abrir el análisis de detalle (`FormDetalleMonotributo.cs`), así como rechequeo forzado con el botón *Actualizar Datos*.
+  - **Comparación Inteligente de Topes y Cuotas (`DetectarDiscrepancias`):** Identificación precisa de diferencias de importes entre la base de datos de la empresa y la publicación oficial de AFIP, generando un cuadro comparativo alineado con variación porcentual (*Antes ➔ Nuevo oficial AFIP*).
+  - **Confirmación con Memoria de Sesión:** Cuadro de diálogo modal que solicita aprobación al usuario antes de modificar la base de datos; si el usuario desestima la actualización, se silencia en la sesión para evitar interrupciones reiteradas.
+- **Monotributo — Consulta Oficial de Categoría Registrada en AFIP:**
+  - Integración con el Web Service oficial de Constancia de Inscripción de ARCA / AFIP (Persona Service A5) para detectar automáticamente la categoría inscripta real mediante certificado digital fiscal.
+- **Monotributo — Badges Gráficos Compactos y Oportunidad de Baja:**
+  - Rediseño de los indicadores de la barra inferior y ventana de detalle con estructura compacta de 3 niveles: ícono + título, barra de consumo con porcentaje centrado en su interior y saldo restante.
+  - Badge dedicado para oportunidad de recategorización a la baja ("Puedes facturar hasta..." / "Ahorrarías").
+
+### Fixed
+- **Monotributo — Corrección de Cálculo de Exceso ("SUPERADO por $ 0"):**
+  - Se eliminó el truncamiento que forzaba a cero el margen de la categoría inscripta al ser superada, calculando el importe y porcentaje real de exceso.
+- **Monotributo — Actualización de Topes Predeterminados Oficiales:**
+  - Escalas base actualizadas a los valores oficiales vigentes de ARCA / AFIP (Categoría D: $ 30.628.651,43; etc.).
+- **Interfaz — Solapamiento Visual en Banner:**
+  - Desacople del ícono institucional en un control independiente dentro del banner para evitar solapamiento sobre el texto.
+
 ## [2.0.9781] - 2026-10-07
 
 ### Added
