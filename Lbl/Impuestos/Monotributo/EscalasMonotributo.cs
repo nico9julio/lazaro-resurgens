@@ -431,6 +431,37 @@ namespace Lbl.Impuestos.Monotributo
                 }
 
                 /// <summary>
+                /// Sincroniza las escalas de categorías consultando y parseando directamente la web oficial de ARCA/AFIP (https://www.afip.gob.ar/monotributo/categorias.asp).
+                /// No requiere API Key ni registro en plataformas externas.
+                /// Esta operación es exclusivamente manual a petición del usuario.
+                /// </summary>
+                public bool SincronizarDesdeWebAfip(string activityType, out string infoMetadata, out string mensajeError)
+                {
+                        infoMetadata = "";
+                        mensajeError = "";
+
+                        List<CategoriaMonotributo> nuevas;
+                        bool ok = ParserWebAfip.ObtenerEscalasDesdeWeb(activityType, out nuevas, out infoMetadata, out mensajeError);
+                        if (ok && nuevas != null && nuevas.Count >= 5)
+                        {
+                                Guardar(nuevas);
+                                UltimaFuenteMetadata = "ARCA Oficial (Web)";
+                                UltimaVigenciaMetadata = infoMetadata;
+
+                                if (Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null && !string.IsNullOrEmpty(infoMetadata))
+                                {
+                                        Lfx.Workspace.Master.CurrentConfig.WriteGlobalSetting("Sistema.Monotributo.UltimaMetadata", infoMetadata);
+                                }
+                                return true;
+                        }
+
+                        if (string.IsNullOrEmpty(mensajeError))
+                                mensajeError = "No se pudieron obtener suficientes categorías de la web oficial de AFIP.";
+
+                        return false;
+                }
+
+                /// <summary>
                 /// Sincroniza las escalas vigentes consultando la Tax API de Servidos (servidos.ar/developers).
                 /// Utiliza el endpoint GET https://api.servidos.ar/api/v1/tax/monotributo/categories?activity_type={activityType}
                 /// </summary>

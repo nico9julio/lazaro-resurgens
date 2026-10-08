@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Lbl.Impuestos.Monotributo;
@@ -154,6 +155,82 @@ namespace Lbl.Test.Entity
                         Assert.AreEqual(100m, pct);
                         Assert.IsTrue(esUlt);
                         Assert.AreEqual("EXCLUSIÓN", sig);
+                }
+
+                [Test]
+                public void ParserWebAfip_ParsearMonto_ManejaFormatosMonetarios()
+                {
+                        Assert.AreEqual(12009410.45m, ParserWebAfip.ParsearMonto("$12.009.410,45"));
+                        Assert.AreEqual(49527.18m, ParserWebAfip.ParsearMonto("$ 49.527,18 "));
+                        Assert.AreEqual(126610838.75m, ParserWebAfip.ParsearMonto("$126.610.838,75"));
+                        Assert.AreEqual(0m, ParserWebAfip.ParsearMonto(""));
+                        Assert.AreEqual(0m, ParserWebAfip.ParsearMonto("-"));
+                }
+
+                [Test]
+                public void ParserWebAfip_ParsearHtml_ExtraeCategoriasYCuotasCorrectamente()
+                {
+                        string htmlEjemplo = @"
+                        <table class=""table table-bordered table-striped"" summary=""Tabla de categorías de monotributo vigente desde 01/08/2024"">
+                            <tbody>
+                                <tr>
+                                    <th id=""th_A_t15"" scope=""row"" data-title=""Categoría"">A</th>
+                                    <td data-title=""Ingresos brutos (****)"">$12.009.410,45 </td>
+                                    <td data-title=""Superficie Afectada (*)"">Hasta 30 m2</td>
+                                    <td data-title=""Energía Eléctrica Consumida Anualmente"">Hasta 3330 Kw</td>
+                                    <td data-title=""Alquileres Devengados Anualmente"">$2.792.886,15 </td>
+                                    <td data-title=""Precio unitario máximo para venta de Cosas Muebles"">$716.840,77 </td>
+                                    <td data-title=""Impuesto Integrado: Locaciones y/o Prestaciones de Servicios"">$5.585,77 </td>
+                                    <td data-title=""Impuesto Integrado: Venta de Cosas Muebles"">$5.585,77 </td>
+                                    <td data-title=""Aportes al SIPA (**)"">$18.246,86 </td>
+                                    <td data-title=""Aportes Obra Social (***)"">$25.694,55 </td>
+                                    <td data-title=""Total: Locaciones y/o prestaciones de servicios"">$49.527,18 </td>
+                                    <td data-title=""Total: Venta de Cosas Muebles"">$49.527,18 </td>
+                                </tr>
+                                <tr>
+                                    <th id=""th_B_t15"" scope=""row"" data-title=""Categoría"">B</th>
+                                    <td data-title=""Ingresos brutos (****)"">$17.595.182,74 </td>
+                                    <td data-title=""Superficie Afectada (*)"">Hasta 45 m2</td>
+                                    <td data-title=""Energía Eléctrica Consumida Anualmente"">Hasta 5000 Kw</td>
+                                    <td data-title=""Alquileres Devengados Anualmente"">$2.792.886,15 </td>
+                                    <td data-title=""Precio unitario máximo para venta de Cosas Muebles"">$716.840,77 </td>
+                                    <td data-title=""Impuesto Integrado: Locaciones y/o Prestaciones de Servicios"">$10.612,98 </td>
+                                    <td data-title=""Impuesto Integrado: Venta de Cosas Muebles"">$10.612,98 </td>
+                                    <td data-title=""Aportes al SIPA (**)"">$20.071,55 </td>
+                                    <td data-title=""Aportes Obra Social (***)"">$25.694,55 </td>
+                                    <td data-title=""Total: Locaciones y/o prestaciones de servicios"">$56.379,08 </td>
+                                    <td data-title=""Total: Venta de Cosas Muebles"">$56.379,08 </td>
+                                </tr>
+                                <tr><th scope=""row"">C</th><td data-title=""Ingresos brutos"">$24.670.494,31</td><td/><td/><td/><td/><td/><td/><td/><td/><td data-title=""Total: Locaciones"">$66.020,12</td><td data-title=""Total: Venta"">$64.530,58</td></tr>
+                                <tr><th scope=""row"">D</th><td data-title=""Ingresos brutos"">$30.628.651,43</td><td/><td/><td/><td/><td/><td/><td/><td/><td data-title=""Total: Locaciones"">$84.612,93</td><td data-title=""Total: Venta"">$82.564,81</td></tr>
+                                <tr><th scope=""row"">E</th><td data-title=""Ingresos brutos"">$36.028.231,33</td><td/><td/><td/><td/><td/><td/><td/><td/><td data-title=""Total: Locaciones"">$119.811,45</td><td data-title=""Total: Venta"">$108.267,51</td></tr>
+                                <tr><th scope=""row"">F</th><td data-title=""Ingresos brutos"">$45.151.659,41</td><td/><td/><td/><td/><td/><td/><td/><td/><td data-title=""Total: Locaciones"">$150.784,21</td><td data-title=""Total: Venta"">$129.930,65</td></tr>
+                                <tr><th scope=""row"">G</th><td data-title=""Ingresos brutos"">$53.995.798,87</td><td/><td/><td/><td/><td/><td/><td/><td/><td data-title=""Total: Locaciones"">$230.312,94</td><td data-title=""Total: Venta"">$158.815,05</td></tr>
+                                <tr><th scope=""row"">H</th><td data-title=""Ingresos brutos"">$81.924.660,37</td><td/><td/><td/><td/><td/><td/><td/><td/><td data-title=""Total: Locaciones"">$522.706,68</td><td data-title=""Total: Venta"">$317.895,01</td></tr>
+                                <tr><th scope=""row"">I</th><td data-title=""Ingresos brutos"">$91.699.761,90</td><td/><td/><td/><td/><td/><td/><td/><td/><td data-title=""Total: Locaciones"">$963.747,86</td><td data-title=""Total: Venta"">$474.992,78</td></tr>
+                                <tr><th scope=""row"">J</th><td data-title=""Ingresos brutos"">$105.012.519,20</td><td/><td/><td/><td/><td/><td/><td/><td/><td data-title=""Total: Locaciones"">$1.167.299,76</td><td data-title=""Total: Venta"">$580.793,69</td></tr>
+                                <tr><th scope=""row"">K</th><td data-title=""Ingresos brutos"">$126.610.838,75</td><td/><td/><td/><td/><td/><td/><td/><td/><td data-title=""Total: Locaciones"">$1.614.446,04</td><td data-title=""Total: Venta"">$702.103,24</td></tr>
+                            </tbody>
+                        </table>";
+
+                        List<CategoriaMonotributo> cats;
+                        string meta, error;
+                        bool res = ParserWebAfip.ParsearHtml(htmlEjemplo, "servicios", out cats, out meta, out error);
+
+                        Assert.IsTrue(res);
+                        Assert.AreEqual("", error);
+                        Assert.IsTrue(meta.Contains("01/08/2024"));
+                        Assert.AreEqual(11, cats.Count);
+
+                        Assert.AreEqual("A", cats[0].Letra);
+                        Assert.AreEqual(12009410.45m, cats[0].IngresosBrutosMaximos);
+                        Assert.AreEqual(49527.18m, cats[0].CuotaServicios);
+                        Assert.AreEqual(49527.18m, cats[0].CuotaBienes);
+
+                        Assert.AreEqual("K", cats[10].Letra);
+                        Assert.AreEqual(126610838.75m, cats[10].IngresosBrutosMaximos);
+                        Assert.AreEqual(1614446.04m, cats[10].CuotaServicios);
+                        Assert.AreEqual(702103.24m, cats[10].CuotaBienes);
                 }
         }
 }

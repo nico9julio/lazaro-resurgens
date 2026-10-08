@@ -11,6 +11,7 @@ namespace Lazaro.WinMain.Principal
 	public class FormConfigurarEscalasMonotributo : Lui.Forms.Form
 	{
 		private DataGridView GrillaEscalas;
+		private Button BotonSincronizarWebAfip;
 		private TextBox EntradaApiKey;
 		private ComboBox ComboActividad;
 		private Button BotonSincronizarServidos;
@@ -34,7 +35,7 @@ namespace Lazaro.WinMain.Principal
 		private void InitializeComponentCustom()
 		{
 			this.Text = "Configuración de Escalas de Monotributo (ARCA / AFIP)";
-			this.Size = new Size(740, 640);
+			this.Size = new Size(760, 680);
 			this.StartPosition = FormStartPosition.CenterParent;
 			this.FormBorderStyle = FormBorderStyle.FixedDialog;
 			this.MaximizeBox = false;
@@ -45,31 +46,61 @@ namespace Lazaro.WinMain.Principal
 			// Panel Superior de Sincronización e Información
 			Panel panelTop = new Panel();
 			panelTop.Dock = DockStyle.Top;
-			panelTop.Height = 220;
+			panelTop.Height = 252;
 			panelTop.Padding = new Padding(12);
 			panelTop.BackColor = Color.FromArgb(246, 248, 252);
 
 			EtiquetaExplicacion = new Label();
-			EtiquetaExplicacion.Text = "ARCA (ex AFIP) actualiza semestralmente los límites máximos de facturación anual de cada categoría según la variación del IPC. " +
-				"Puede sincronizar las escalas automáticamente mediante Servidos API, o editarlas manualmente en la grilla inferior (sin centavos).";
-			EtiquetaExplicacion.Location = new Point(12, 10);
-			EtiquetaExplicacion.Size = new Size(700, 34);
+			EtiquetaExplicacion.Text = "ARCA (ex AFIP) actualiza semestralmente los límites máximos de facturación y cuotas del Monotributo según el IPC. " +
+				"Puede sincronizarlas de forma manual en 1 clic desde la web oficial de AFIP (sin clave), vía Servidos API, o editarlas en la grilla.";
+			EtiquetaExplicacion.Location = new Point(12, 8);
+			EtiquetaExplicacion.Size = new Size(715, 30);
 			EtiquetaExplicacion.ForeColor = Color.FromArgb(50, 60, 75);
 			panelTop.Controls.Add(EtiquetaExplicacion);
 
-			// GroupBox para integración con Servidos Developers API
+			// GroupBox 1: Sincronización Oficial Directa Web AFIP / ARCA (Recomendada - Sin clave)
+			GroupBox gbWebAfip = new GroupBox();
+			gbWebAfip.Text = " Sincronización oficial directa desde la Web de ARCA / AFIP (Recomendado — Sin API Key) ";
+			gbWebAfip.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
+			gbWebAfip.ForeColor = Color.FromArgb(20, 80, 45);
+			gbWebAfip.Location = new Point(12, 40);
+			gbWebAfip.Size = new Size(715, 68);
+
+			BotonSincronizarWebAfip = new Button();
+			BotonSincronizarWebAfip.Text = "🌐 Sincronizar desde Web Oficial AFIP";
+			BotonSincronizarWebAfip.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+			BotonSincronizarWebAfip.Location = new Point(12, 22);
+			BotonSincronizarWebAfip.Size = new Size(310, 34);
+			BotonSincronizarWebAfip.BackColor = Color.FromArgb(28, 120, 60);
+			BotonSincronizarWebAfip.ForeColor = Color.White;
+			BotonSincronizarWebAfip.UseVisualStyleBackColor = false;
+			BotonSincronizarWebAfip.Cursor = Cursors.Hand;
+			BotonSincronizarWebAfip.Click += new EventHandler(BotonSincronizarWebAfip_Click);
+			gbWebAfip.Controls.Add(BotonSincronizarWebAfip);
+
+			Label lblWebInfo = new Label();
+			lblWebInfo.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
+			lblWebInfo.ForeColor = Color.FromArgb(60, 75, 70);
+			lblWebInfo.Location = new Point(332, 22);
+			lblWebInfo.Size = new Size(370, 36);
+			lblWebInfo.Text = "Descarga en un clic la tabla oficial de afip.gob.ar/monotributo/categorias.asp.\r\nActualización manual y directa sin requerir registro ni API Key.";
+			gbWebAfip.Controls.Add(lblWebInfo);
+
+			panelTop.Controls.Add(gbWebAfip);
+
+			// GroupBox 2: Integración alternativa con Servidos Developers API o URL
 			GroupBox gbServidos = new GroupBox();
-			gbServidos.Text = " Sincronización oficial vía Servidos Tax API (servidos.ar) ";
+			gbServidos.Text = " Alternativas: Servidos Developers Tax API (servidos.ar) o URL externa ";
 			gbServidos.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
-			gbServidos.ForeColor = Color.FromArgb(30, 60, 110);
-			gbServidos.Location = new Point(12, 48);
-			gbServidos.Size = new Size(700, 116);
+			gbServidos.ForeColor = Color.FromArgb(40, 65, 110);
+			gbServidos.Location = new Point(12, 112);
+			gbServidos.Size = new Size(715, 104);
 
 			LinkServidosDev = new LinkLabel();
-			LinkServidosDev.Text = "Obtener API Key gratuita (500 peticiones mensuales) en servidos.ar/developers";
-			LinkServidosDev.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular);
-			LinkServidosDev.Location = new Point(12, 22);
-			LinkServidosDev.Size = new Size(480, 18);
+			LinkServidosDev.Text = "Obtener API Key gratuita (500 peticiones/mes) en servidos.ar/developers";
+			LinkServidosDev.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
+			LinkServidosDev.Location = new Point(12, 20);
+			LinkServidosDev.Size = new Size(420, 16);
 			LinkServidosDev.LinkClicked += (s, e) =>
 			{
 				try
@@ -82,90 +113,89 @@ namespace Lazaro.WinMain.Principal
 
 			Label lblKey = new Label();
 			lblKey.Text = "API Key:";
-			lblKey.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular);
+			lblKey.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
 			lblKey.ForeColor = Color.FromArgb(40, 50, 60);
-			lblKey.Location = new Point(12, 49);
-			lblKey.Size = new Size(60, 22);
+			lblKey.Location = new Point(12, 40);
+			lblKey.Size = new Size(55, 22);
 			lblKey.TextAlign = ContentAlignment.MiddleLeft;
 			gbServidos.Controls.Add(lblKey);
 
 			EntradaApiKey = new TextBox();
-			EntradaApiKey.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular);
-			EntradaApiKey.Location = new Point(74, 49);
-			EntradaApiKey.Size = new Size(240, 23);
+			EntradaApiKey.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
+			EntradaApiKey.Location = new Point(68, 40);
+			EntradaApiKey.Size = new Size(170, 22);
 			EntradaApiKey.Text = Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null ?
 				Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Monotributo.ServidosApiKey", "") : "";
 			gbServidos.Controls.Add(EntradaApiKey);
 
 			Label lblAct = new Label();
 			lblAct.Text = "Actividad:";
-			lblAct.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular);
+			lblAct.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
 			lblAct.ForeColor = Color.FromArgb(40, 50, 60);
-			lblAct.Location = new Point(324, 49);
-			lblAct.Size = new Size(65, 22);
+			lblAct.Location = new Point(244, 40);
+			lblAct.Size = new Size(60, 22);
 			lblAct.TextAlign = ContentAlignment.MiddleLeft;
 			gbServidos.Controls.Add(lblAct);
 
 			ComboActividad = new ComboBox();
-			ComboActividad.Font = new Font("Segoe UI", 8.5F, FontStyle.Regular);
+			ComboActividad.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular);
 			ComboActividad.DropDownStyle = ComboBoxStyle.DropDownList;
 			ComboActividad.Items.Add("Servicios");
 			ComboActividad.Items.Add("Comercio / Cosas Muebles");
 			string tipoGuardado = Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null ?
 				Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Monotributo.TipoActividad", "servicios") : "servicios";
 			ComboActividad.SelectedIndex = (tipoGuardado == "comercio") ? 1 : 0;
-			ComboActividad.Location = new Point(392, 49);
-			ComboActividad.Size = new Size(160, 23);
+			ComboActividad.Location = new Point(306, 40);
+			ComboActividad.Size = new Size(140, 22);
 			gbServidos.Controls.Add(ComboActividad);
 
 			BotonSincronizarServidos = new Button();
-			BotonSincronizarServidos.Text = "Sincronizar API";
-			BotonSincronizarServidos.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
-			BotonSincronizarServidos.Location = new Point(562, 47);
-			BotonSincronizarServidos.Size = new Size(125, 27);
+			BotonSincronizarServidos.Text = "Sincronizar Servidos";
+			BotonSincronizarServidos.Font = new Font("Segoe UI", 8.25F, FontStyle.Bold);
+			BotonSincronizarServidos.Location = new Point(454, 38);
+			BotonSincronizarServidos.Size = new Size(135, 26);
 			BotonSincronizarServidos.BackColor = Color.FromArgb(41, 128, 185);
 			BotonSincronizarServidos.ForeColor = Color.White;
 			BotonSincronizarServidos.UseVisualStyleBackColor = false;
 			BotonSincronizarServidos.Click += new EventHandler(BotonSincronizarServidos_Click);
 			gbServidos.Controls.Add(BotonSincronizarServidos);
 
-			LabelEstadoSync = new Label();
-			LabelEstadoSync.Font = new Font("Segoe UI", 8.25F, FontStyle.Italic);
-			LabelEstadoSync.ForeColor = Color.FromArgb(70, 85, 100);
-			LabelEstadoSync.Location = new Point(12, 82);
-			LabelEstadoSync.Size = new Size(675, 22);
-			string vigencia = EscalasMonotributo.UltimaVigenciaMetadata;
-			LabelEstadoSync.Text = !string.IsNullOrEmpty(vigencia) ? ("Estado: " + vigencia) : "Estado: Escalas vigentes oficiales de ARCA cargadas.";
-			gbServidos.Controls.Add(LabelEstadoSync);
-
-			panelTop.Controls.Add(gbServidos);
-
-			// Fila inferior compacta para URL alternativa
 			Label lblUrl = new Label();
-			lblUrl.Text = "URL JSON alternativa (opcional):";
+			lblUrl.Text = "URL JSON:";
 			lblUrl.Font = new Font("Segoe UI", 8F);
 			lblUrl.ForeColor = Color.FromArgb(80, 90, 100);
-			lblUrl.Location = new Point(12, 180);
-			lblUrl.Size = new Size(180, 22);
+			lblUrl.Location = new Point(12, 70);
+			lblUrl.Size = new Size(65, 22);
 			lblUrl.TextAlign = ContentAlignment.MiddleLeft;
-			panelTop.Controls.Add(lblUrl);
+			gbServidos.Controls.Add(lblUrl);
 
 			EntradaUrl = new TextBox();
 			EntradaUrl.Font = new Font("Segoe UI", 8F);
-			EntradaUrl.Location = new Point(195, 180);
-			EntradaUrl.Size = new Size(390, 22);
+			EntradaUrl.Location = new Point(78, 70);
+			EntradaUrl.Size = new Size(510, 22);
 			EntradaUrl.Text = Lfx.Workspace.Master != null && Lfx.Workspace.Master.CurrentConfig != null ?
 				Lfx.Workspace.Master.CurrentConfig.ReadGlobalSetting<string>("Sistema.Monotributo.UrlApiEscalas", "") : "";
-			panelTop.Controls.Add(EntradaUrl);
+			gbServidos.Controls.Add(EntradaUrl);
 
 			BotonDescargarUrl = new Button();
 			BotonDescargarUrl.Text = "Cargar URL";
 			BotonDescargarUrl.Font = new Font("Segoe UI", 8F);
-			BotonDescargarUrl.Location = new Point(595, 179);
-			BotonDescargarUrl.Size = new Size(117, 24);
+			BotonDescargarUrl.Location = new Point(598, 69);
+			BotonDescargarUrl.Size = new Size(105, 24);
 			BotonDescargarUrl.BackColor = Color.FromArgb(235, 240, 248);
 			BotonDescargarUrl.Click += new EventHandler(BotonDescargarUrl_Click);
-			panelTop.Controls.Add(BotonDescargarUrl);
+			gbServidos.Controls.Add(BotonDescargarUrl);
+
+			panelTop.Controls.Add(gbServidos);
+
+			LabelEstadoSync = new Label();
+			LabelEstadoSync.Font = new Font("Segoe UI", 8.25F, FontStyle.Italic);
+			LabelEstadoSync.ForeColor = Color.FromArgb(70, 85, 100);
+			LabelEstadoSync.Location = new Point(12, 222);
+			LabelEstadoSync.Size = new Size(715, 22);
+			string vigencia = EscalasMonotributo.UltimaVigenciaMetadata;
+			LabelEstadoSync.Text = !string.IsNullOrEmpty(vigencia) ? ("Estado: " + vigencia) : "Estado: Escalas vigentes oficiales de ARCA cargadas.";
+			panelTop.Controls.Add(LabelEstadoSync);
 
 			this.Controls.Add(panelTop);
 
@@ -262,6 +292,39 @@ namespace Lazaro.WinMain.Principal
 			if (!string.IsNullOrEmpty(meta))
 			{
 				LabelEstadoSync.Text = "Estado: " + meta;
+			}
+		}
+
+		private void BotonSincronizarWebAfip_Click(object sender, EventArgs e)
+		{
+			string tipo = ComboActividad.SelectedIndex == 1 ? "comercio" : "servicios";
+
+			Cursor = Cursors.WaitCursor;
+			try
+			{
+				string infoMeta;
+				string error;
+				bool ok = EscalasMonotributo.Instancia.SincronizarDesdeWebAfip(tipo, out infoMeta, out error);
+				if (ok)
+				{
+					CargarDatos();
+					LabelEstadoSync.Text = "Sincronizado: " + (!string.IsNullOrEmpty(infoMeta) ? infoMeta : "Escalas oficiales actualizadas desde web de AFIP");
+					LabelEstadoSync.ForeColor = Color.FromArgb(0, 120, 0);
+
+					MessageBox.Show("Las escalas de categorías de Monotributo se sincronizaron exitosamente desde el portal oficial de ARCA / AFIP (afip.gob.ar).\r\n\r\n" +
+						infoMeta + "\r\n\r\nLos nuevos topes y cuotas vigentes ya se encuentran cargados en la grilla.",
+						"Sincronización Exitosa", MessageBoxButtons.OK, MessageBoxIcon.Information);
+				}
+				else
+				{
+					MessageBox.Show("No se pudieron sincronizar las escalas desde la página web de AFIP:\r\n\r\n" + error +
+						"\r\n\r\nPuede intentar sincronizar mediante Servidos API, ingresar los valores manualmente en la grilla, o verificar su conexión a Internet.",
+						"Aviso de Sincronización Web", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+				}
+			}
+			finally
+			{
+				Cursor = Cursors.Default;
 			}
 		}
 
